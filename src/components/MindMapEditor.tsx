@@ -2,15 +2,9 @@ import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
 import { Plus, X, ChevronRight, ChevronDown, MessageSquare, GitBranch } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { MindMapNode } from '@/types/note';
+import { motion, AnimatePresence } from 'framer-motion';
 
-export interface MindMapNode {
-  id: string;
-  text: string;
-  description: string;
-  children: MindMapNode[];
-  collapsed: boolean;
-  color: string;
-}
 
 const branchColors = [
   'hsl(210, 70%, 55%)',   // blue
