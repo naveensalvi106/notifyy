@@ -31,17 +31,19 @@ export default function NoteCard({ note, onClick, onPin, index, onDragStart, onD
   const videoCount = (note.media || []).filter(m => m.type === 'youtube').length;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.04, duration: 0.3 }}
-      draggable="true"
+    <div
+      draggable
       onDragStart={e => { e.dataTransfer.setData('text/plain', note.id); onDragStart?.(e, note.id); }}
       onDragOver={e => { e.preventDefault(); onDragOver?.(e); }}
-      onDrop={e => { e.preventDefault(); onDrop?.(e as unknown as React.DragEvent, note.id); }}
-      className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group`}
-      onClick={onClick}
+      onDrop={e => { e.preventDefault(); onDrop?.(e, note.id); }}
     >
+      <motion.div
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: index * 0.04, duration: 0.3 }}
+        className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group`}
+        onClick={onClick}
+      >
       {/* Drag handle */}
       <div className="absolute top-3 left-3 opacity-0 group-hover:opacity-40 transition-opacity pointer-events-none">
         <GripVertical size={14} className="text-foreground/50" />
