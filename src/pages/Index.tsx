@@ -68,6 +68,7 @@ export default function Index({ userName, onLogout }: IndexProps) {
 
   const handleNew = (color: NoteColor = 'yellow') => {
     const id = createNote(color);
+    if (selectedCategory !== 'All') updateNote(id, { category: selectedCategory });
     setEditingId(id);
     setShowNewColorPicker(false);
   };
