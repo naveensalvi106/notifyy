@@ -17,10 +17,17 @@ export interface MindMapNode {
 
 export interface NoteReminder {
   id: string;
-  time: string; // HH:mm format
+  time: string;
   daily: boolean;
   datetime: string;
   enabled: boolean;
+}
+
+export interface MediaAttachment {
+  id: string;
+  type: 'audio' | 'youtube';
+  name: string;
+  url: string; // data URL for audio, youtube URL for videos
 }
 
 export interface Note {
@@ -30,6 +37,7 @@ export interface Note {
   color: NoteColor;
   checklist: ChecklistItem[];
   mindmap: MindMapNode[];
+  media: MediaAttachment[];
   reminder?: NoteReminder;
   pinned: boolean;
   category: string;
