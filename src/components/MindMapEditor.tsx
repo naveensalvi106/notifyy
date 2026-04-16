@@ -1,64 +1,259 @@
-import { MindMapNode } from '@/types/note';
-import { useState, useRef, useCallback } from 'react';
+import { useState } from 'react';
 import { v4 as uuidv4 } from 'uuid';
-import { Plus, Trash2 } from 'lucide-react';
+import { Plus, X, ChevronRight, ChevronDown, MessageSquare, GitBranch } from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 
+export interface MindMapNode {
+  id: string;
+  text: string;
+  description: string;
+  children: MindMapNode[];
+  collapsed: boolean;
+  color: string;
+}
+
+const branchColors = [
+  'hsl(210, 70%, 55%)',   // blue
+  'hsl(25, 90%, 55%)',    // orange
+  'hsl(160, 50%, 45%)',   // teal
+  'hsl(340, 60%, 55%)',   // pink
+  'hsl(270, 50%, 55%)',   // purple
+  'hsl(45, 85%, 50%)',    // amber
+  'hsl(140, 50%, 45%)',   // green
+  'hsl(0, 65%, 55%)',     // red
+];
+
+function getColor(depth: number, index: number) {
+  return branchColors[(depth + index) % branchColors.length];
+}
+
+interface NodeItemProps {
+  node: MindMapNode;
+  depth: number;
+  index: number;
+  onUpdate: (updated: MindMapNode) => void;
+  onDelete: () => void;
+  isRoot?: boolean;
+}
+
+function NodeItem({ node, depth, index, onUpdate, onDelete, isRoot }: NodeItemProps) {
+  const [editing, setEditing] = useState(!node.text);
+  const [editingDesc, setEditingDesc] = useState(false);
+  const [showDesc, setShowDesc] = useState(!!node.description);
+  const color = node.color || getColor(depth, index);
+  const hasChildren = node.children.length > 0;
+
+  const addChild = () => {
+    const childColor = getColor(depth + 1, node.children.length);
+    const newChild: MindMapNode = {
+      id: uuidv4(),
+      text: '',
+      description: '',
+      children: [],
+      collapsed: false,
+      color: childColor,
+    };
+    onUpdate({ ...node, children: [...node.children, newChild], collapsed: false });
+  };
+
+  const updateChild = (childId: string, updated: MindMapNode) => {
+    onUpdate({ ...node, children: node.children.map(c => c.id === childId ? updated : c) });
+  };
+
+  const deleteChild = (childId: string) => {
+    onUpdate({ ...node, children: node.children.filter(c => c.id !== childId) });
+  };
+
+  const toggleCollapse = () => {
+    if (hasChildren) onUpdate({ ...node, collapsed: !node.collapsed });
+  };
+
+  return (
+    <div className="relative">
+      <div className="flex items-start gap-0">
+        {/* Vertical branch line for non-root */}
+        {!isRoot && (
+          <div className="flex items-center flex-shrink-0 mt-3">
+            <div className="w-6 h-px" style={{ backgroundColor: color, opacity: 0.4 }} />
+          </div>
+        )}
+
+        <div className="flex-1 min-w-0">
+          {/* Node card */}
+          <motion.div
+            initial={{ opacity: 0, x: -8 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="group flex items-center gap-1.5"
+          >
+            {/* Collapse toggle */}
+            {hasChildren ? (
+              <button
+                onClick={toggleCollapse}
+                className="w-5 h-5 flex items-center justify-center rounded flex-shrink-0 hover:bg-foreground/5 transition-colors"
+              >
+                {node.collapsed
+                  ? <ChevronRight size={14} style={{ color }} />
+                  : <ChevronDown size={14} style={{ color }} />
+                }
+              </button>
+            ) : (
+              <div className="w-5" />
+            )}
+
+            {/* Node pill */}
+            <div
+              className="rounded-xl px-3 py-1.5 min-w-[80px] max-w-[260px] flex items-center gap-2 cursor-pointer transition-shadow hover:shadow-md"
+              style={{ backgroundColor: color, boxShadow: `0 2px 8px ${color}33` }}
+              onClick={() => setEditing(true)}
+            >
+              {editing ? (
+                <input
+                  autoFocus
+                  value={node.text}
+                  onChange={e => onUpdate({ ...node, text: e.target.value })}
+                  onBlur={() => setEditing(false)}
+                  onKeyDown={e => { if (e.key === 'Enter') { setEditing(false); if (!node.text.trim()) onUpdate({ ...node, text: 'New idea' }); } }}
+                  placeholder="Type here..."
+                  className="bg-transparent text-sm font-heading font-bold outline-none w-full min-w-[60px] placeholder:opacity-50"
+                  style={{ color: '#fff' }}
+                />
+              ) : (
+                <span className="text-sm font-heading font-bold truncate" style={{ color: '#fff' }}>
+                  {node.text || 'New idea'}
+                </span>
+              )}
+            </div>
+
+            {/* Action buttons */}
+            <div className="flex items-center gap-0.5 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                onClick={addChild}
+                className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors hover:bg-foreground/5"
+                title="Add branch"
+              >
+                <Plus size={14} style={{ color }} />
+              </button>
+              <button
+                onClick={() => { setShowDesc(!showDesc); if (!showDesc) setEditingDesc(true); }}
+                className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors hover:bg-foreground/5"
+                title="Add description"
+              >
+                <MessageSquare size={12} className="text-muted-foreground" />
+              </button>
+              {!isRoot && (
+                <button
+                  onClick={onDelete}
+                  className="w-6 h-6 rounded-lg flex items-center justify-center transition-colors hover:bg-destructive/10"
+                  title="Delete"
+                >
+                  <X size={12} className="text-muted-foreground hover:text-destructive" />
+                </button>
+              )}
+            </div>
+          </motion.div>
+
+          {/* Description */}
+          <AnimatePresence>
+            {showDesc && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="ml-5 mt-1 mb-1">
+                  {editingDesc ? (
+                    <textarea
+                      autoFocus
+                      value={node.description}
+                      onChange={e => onUpdate({ ...node, description: e.target.value })}
+                      onBlur={() => setEditingDesc(false)}
+                      placeholder="Add a description..."
+                      rows={2}
+                      className="w-full max-w-[240px] text-xs font-body bg-foreground/5 rounded-lg px-2.5 py-1.5 outline-none resize-none placeholder:text-muted-foreground focus:ring-1 focus:ring-primary/20 text-foreground"
+                    />
+                  ) : (
+                    <p
+                      className="text-xs font-body text-muted-foreground max-w-[240px] cursor-pointer hover:text-foreground transition-colors px-1"
+                      onClick={() => setEditingDesc(true)}
+                    >
+                      {node.description || 'Click to add description...'}
+                    </p>
+                  )}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {/* Children */}
+          <AnimatePresence>
+            {!node.collapsed && hasChildren && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: 'auto', opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                className="ml-4 mt-0.5 border-l-2 pl-0 space-y-0.5 overflow-hidden"
+                style={{ borderColor: `${color}30` }}
+              >
+                {node.children.map((child, ci) => (
+                  <NodeItem
+                    key={child.id}
+                    node={child}
+                    depth={depth + 1}
+                    index={ci}
+                    onUpdate={(updated) => updateChild(child.id, updated)}
+                    onDelete={() => deleteChild(child.id)}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+// Conversion helpers between flat MindMapNode[] (old) and tree MindMapNode (new)
 interface MindMapEditorProps {
   nodes: MindMapNode[];
   onChange: (nodes: MindMapNode[]) => void;
 }
 
 export default function MindMapEditor({ nodes, onChange }: MindMapEditorProps) {
-  const svgRef = useRef<SVGSVGElement>(null);
-  const [dragging, setDragging] = useState<string | null>(null);
-  const [connecting, setConnecting] = useState<string | null>(null);
-  const [editingId, setEditingId] = useState<string | null>(null);
+  // We store the tree as a single root node array
+  // Each node in the array is a root-level branch
 
-  const addNode = () => {
-    const x = 150 + Math.random() * 200;
-    const y = 80 + nodes.length * 60;
-    const newNode: MindMapNode = { id: uuidv4(), text: 'New idea', x, y, children: [] };
+  const addRootNode = () => {
+    const color = getColor(0, nodes.length);
+    const newNode: MindMapNode = {
+      id: uuidv4(),
+      text: '',
+      description: '',
+      children: [],
+      collapsed: false,
+      color,
+    };
     onChange([...nodes, newNode]);
-    setEditingId(newNode.id);
+  };
+
+  const updateNode = (id: string, updated: MindMapNode) => {
+    onChange(nodes.map(n => n.id === id ? updated : n));
   };
 
   const deleteNode = (id: string) => {
-    onChange(nodes.filter(n => n.id !== id).map(n => ({ ...n, children: n.children.filter(c => c !== id) })));
+    onChange(nodes.filter(n => n.id !== id));
   };
-
-  const updateNodeText = (id: string, text: string) => {
-    onChange(nodes.map(n => n.id === id ? { ...n, text } : n));
-  };
-
-  const handleMouseDown = (id: string, e: React.MouseEvent) => {
-    if (connecting) {
-      if (connecting !== id) {
-        onChange(nodes.map(n => n.id === connecting ? { ...n, children: [...new Set([...n.children, id])] } : n));
-      }
-      setConnecting(null);
-      return;
-    }
-    e.preventDefault();
-    setDragging(id);
-  };
-
-  const handleMouseMove = useCallback((e: React.MouseEvent) => {
-    if (!dragging || !svgRef.current) return;
-    const rect = svgRef.current.getBoundingClientRect();
-    const x = e.clientX - rect.left;
-    const y = e.clientY - rect.top;
-    onChange(nodes.map(n => n.id === dragging ? { ...n, x, y } : n));
-  }, [dragging, nodes, onChange]);
-
-  const handleMouseUp = () => setDragging(null);
 
   if (nodes.length === 0) {
     return (
-      <div className="space-y-2">
-        <h4 className="font-heading font-bold text-sm text-foreground">Mind Map</h4>
+      <div className="space-y-3">
+        <h4 className="font-heading font-bold text-sm text-foreground flex items-center gap-2">
+          <GitBranch size={16} className="text-primary" /> Mind Map
+        </h4>
         <button
-          onClick={addNode}
-          className="flex items-center gap-2 text-sm text-primary hover:text-primary/80 font-body transition-colors"
+          onClick={addRootNode}
+          className="flex items-center gap-2.5 w-full px-4 py-3 rounded-2xl border border-dashed border-primary/30 text-sm text-primary hover:bg-primary/5 font-body font-semibold transition-all"
         >
           <Plus size={16} /> Start a mind map
         </button>
@@ -67,95 +262,32 @@ export default function MindMapEditor({ nodes, onChange }: MindMapEditorProps) {
   }
 
   return (
-    <div className="space-y-2">
+    <div className="space-y-3">
       <div className="flex items-center justify-between">
-        <h4 className="font-heading font-bold text-sm text-foreground">Mind Map</h4>
-        <div className="flex gap-1">
-          <button onClick={addNode} className="p-1.5 rounded-lg bg-primary/10 text-primary hover:bg-primary/20 transition-colors">
-            <Plus size={14} />
-          </button>
-          {connecting && <span className="text-xs text-secondary font-body animate-pulse">Click a node to connect</span>}
-        </div>
+        <h4 className="font-heading font-bold text-sm text-foreground flex items-center gap-2">
+          <GitBranch size={16} className="text-primary" /> Mind Map
+        </h4>
+        <button
+          onClick={addRootNode}
+          className="flex items-center gap-1.5 text-xs font-body font-semibold text-primary hover:text-primary/80 transition-colors px-2 py-1 rounded-lg hover:bg-primary/5"
+        >
+          <Plus size={14} /> Add branch
+        </button>
       </div>
 
-      <svg
-        ref={svgRef}
-        className="w-full rounded-xl border border-border bg-card/50"
-        style={{ height: Math.max(250, nodes.length * 50 + 100) }}
-        onMouseMove={handleMouseMove}
-        onMouseUp={handleMouseUp}
-        onMouseLeave={handleMouseUp}
-      >
-        {nodes.map(node =>
-          node.children.map(childId => {
-            const child = nodes.find(n => n.id === childId);
-            if (!child) return null;
-            return (
-              <line
-                key={`${node.id}-${childId}`}
-                x1={node.x} y1={node.y}
-                x2={child.x} y2={child.y}
-                stroke="hsl(var(--primary))"
-                strokeWidth={2}
-                strokeOpacity={0.4}
-              />
-            );
-          })
-        )}
-
-        {nodes.map(node => (
-          <g key={node.id}>
-            <rect
-              x={node.x - 55} y={node.y - 18}
-              width={110} height={36}
-              rx={12}
-              fill={connecting === node.id ? 'hsl(var(--secondary))' : 'hsl(var(--card))'}
-              stroke="hsl(var(--primary))"
-              strokeWidth={1.5}
-              strokeOpacity={0.3}
-              className="cursor-grab active:cursor-grabbing"
-              onMouseDown={(e) => handleMouseDown(node.id, e)}
-              onDoubleClick={() => setEditingId(node.id)}
-            />
-            {editingId === node.id ? (
-              <foreignObject x={node.x - 50} y={node.y - 12} width={100} height={24}>
-                <input
-                  autoFocus
-                  value={node.text}
-                  onChange={e => updateNodeText(node.id, e.target.value)}
-                  onBlur={() => setEditingId(null)}
-                  onKeyDown={e => e.key === 'Enter' && setEditingId(null)}
-                  className="w-full bg-transparent text-xs text-center font-body outline-none"
-                  style={{ color: 'hsl(var(--foreground))' }}
-                />
-              </foreignObject>
-            ) : (
-              <text
-                x={node.x} y={node.y + 4}
-                textAnchor="middle"
-                className="text-xs font-body pointer-events-none select-none"
-                fill="hsl(var(--foreground))"
-              >
-                {node.text.length > 14 ? node.text.slice(0, 14) + '…' : node.text}
-              </text>
-            )}
-            <g className="opacity-0 hover:opacity-100 transition-opacity">
-              <circle
-                cx={node.x + 45} cy={node.y - 10} r={8}
-                fill="hsl(var(--destructive))" className="cursor-pointer"
-                onClick={() => deleteNode(node.id)}
-              />
-              <text x={node.x + 45} y={node.y - 6} textAnchor="middle" fill="white" className="text-[8px] pointer-events-none">✕</text>
-              <circle
-                cx={node.x + 45} cy={node.y + 10} r={8}
-                fill="hsl(var(--primary))" className="cursor-pointer"
-                onClick={() => setConnecting(node.id)}
-              />
-              <text x={node.x + 45} y={node.y + 14} textAnchor="middle" fill="white" className="text-[8px] pointer-events-none">→</text>
-            </g>
-          </g>
+      <div className="space-y-1 rounded-2xl border border-border bg-card/50 p-3 overflow-x-auto">
+        {nodes.map((node, i) => (
+          <NodeItem
+            key={node.id}
+            node={node}
+            depth={0}
+            index={i}
+            onUpdate={(updated) => updateNode(node.id, updated)}
+            onDelete={() => deleteNode(node.id)}
+            isRoot
+          />
         ))}
-      </svg>
+      </div>
     </div>
   );
 }
