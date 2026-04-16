@@ -238,11 +238,11 @@ export default function ReminderEditor({ reminder, noteTitle, onChange }: Remind
       <motion.div
         initial={{ opacity: 0, y: 4 }}
         animate={{ opacity: 1, y: 0 }}
-        className="flex items-center gap-3 px-4 py-3 rounded-2xl bg-primary/8 border border-primary/15 cursor-pointer"
+        className="flex items-center gap-3 px-4 py-3 rounded-2xl glass-card cursor-pointer"
         onClick={() => { setHours(parseTime(reminder.time).h); setMinutes(parseTime(reminder.time).m); setIsDaily(reminder.daily); setExpanded(true); }}
       >
-        <div className="w-9 h-9 rounded-xl bg-primary/15 flex items-center justify-center flex-shrink-0">
-          <Bell size={18} className="text-primary" />
+        <div className="w-9 h-9 rounded-xl glass-primary flex items-center justify-center flex-shrink-0">
+          <Bell size={16} className="text-primary-foreground" />
         </div>
         <div className="flex-1 min-w-0">
           <p className="text-sm font-heading font-bold text-foreground">
@@ -254,7 +254,7 @@ export default function ReminderEditor({ reminder, noteTitle, onChange }: Remind
         </div>
         <button
           onClick={(e) => { e.stopPropagation(); removeReminder(); }}
-          className="p-1.5 rounded-lg hover:bg-destructive/10 text-muted-foreground hover:text-destructive transition-colors"
+          className="p-1.5 rounded-lg glass-icon text-muted-foreground hover:text-destructive"
         >
           <X size={16} />
         </button>
@@ -262,14 +262,13 @@ export default function ReminderEditor({ reminder, noteTitle, onChange }: Remind
     );
   }
 
-  // Collapsed
   if (!expanded) {
     return (
       <button
         onClick={() => setExpanded(true)}
-        className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl border border-border hover:border-primary/30 hover:bg-primary/5 transition-all group"
+        className="flex items-center gap-3 w-full px-4 py-3 rounded-2xl glass-btn group"
       >
-        <div className="w-9 h-9 rounded-xl bg-muted flex items-center justify-center group-hover:bg-primary/10 transition-colors">
+        <div className="w-9 h-9 rounded-xl glass-icon flex items-center justify-center">
           <Bell size={18} className="text-muted-foreground group-hover:text-primary transition-colors" />
         </div>
         <span className="text-sm font-body font-semibold text-muted-foreground group-hover:text-foreground transition-colors">
@@ -279,12 +278,11 @@ export default function ReminderEditor({ reminder, noteTitle, onChange }: Remind
     );
   }
 
-  // Expanded circular picker
   return (
     <motion.div
       initial={{ opacity: 0, scale: 0.97 }}
       animate={{ opacity: 1, scale: 1 }}
-      className="rounded-2xl border border-border bg-card shadow-soft overflow-hidden"
+      className="rounded-2xl glass-strong overflow-hidden"
     >
       <div className="p-4 space-y-4">
         <div className="flex items-center justify-between">
@@ -292,7 +290,7 @@ export default function ReminderEditor({ reminder, noteTitle, onChange }: Remind
             <Clock size={18} className="text-primary" />
             <h4 className="font-heading font-bold text-foreground">Reminder</h4>
           </div>
-          <button onClick={() => setExpanded(false)} className="p-1 rounded-lg hover:bg-muted text-muted-foreground">
+          <button onClick={() => setExpanded(false)} className="p-1.5 rounded-lg glass-icon text-muted-foreground">
             <X size={16} />
           </button>
         </div>
@@ -304,27 +302,26 @@ export default function ReminderEditor({ reminder, noteTitle, onChange }: Remind
           onMinutesChange={setMinutes}
         />
 
-        {/* Daily toggle */}
         <button
           onClick={() => setIsDaily(!isDaily)}
-          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all ${isDaily ? 'bg-accent/20 border border-accent/30' : 'bg-muted/30 border border-transparent hover:bg-muted/50'}`}
+          className={`flex items-center gap-3 w-full px-4 py-3 rounded-xl transition-all ${isDaily ? 'glass-primary' : 'glass-btn'}`}
         >
-          <Repeat size={16} className={isDaily ? 'text-accent' : 'text-muted-foreground'} />
-          <span className={`text-sm font-body font-semibold flex-1 text-left ${isDaily ? 'text-foreground' : 'text-muted-foreground'}`}>
+          <Repeat size={16} className={isDaily ? 'text-primary-foreground' : 'text-muted-foreground'} />
+          <span className={`text-sm font-body font-semibold flex-1 text-left ${isDaily ? 'text-primary-foreground' : 'text-muted-foreground'}`}>
             Repeat daily
           </span>
-          <div className={`w-10 h-6 rounded-full transition-colors relative ${isDaily ? 'bg-accent' : 'bg-muted'}`}>
+          <div className={`w-10 h-6 rounded-full transition-colors relative ${isDaily ? 'bg-primary-foreground/20' : 'bg-foreground/10'}`}>
             <motion.div
               animate={{ x: isDaily ? 18 : 2 }}
               transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-              className="absolute top-1 w-4 h-4 rounded-full bg-card shadow-sm"
+              className={`absolute top-1 w-4 h-4 rounded-full shadow-sm ${isDaily ? 'bg-primary-foreground' : 'bg-card'}`}
             />
           </div>
         </button>
 
         <button
           onClick={saveReminder}
-          className="w-full py-3 rounded-xl bg-primary text-primary-foreground font-heading font-bold text-sm hover:opacity-90 active:scale-[0.98] shadow-sm transition-all"
+          className="w-full py-3 rounded-xl glass-primary text-primary-foreground font-heading font-bold text-sm transition-all"
         >
           Set Reminder
         </button>
