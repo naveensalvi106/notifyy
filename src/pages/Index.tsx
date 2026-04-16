@@ -3,7 +3,8 @@ import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteColor } from '@/types/note';
 import NoteCard from '@/components/NoteCard';
 import NoteEditor from '@/components/NoteEditor';
-import { Plus, Search, StickyNote, X, Check, LogOut, User } from 'lucide-react';
+import { Plus, Search, X, Check, LogOut, User } from 'lucide-react';
+import notifyLogo from '@/assets/notify-logo.jpeg';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CATEGORIES_KEY = 'easynotes_categories';
@@ -105,11 +106,11 @@ export default function Index({ userName, onLogout }: IndexProps) {
         {/* Header */}
         <div className="flex items-center justify-between mb-5">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl glass-icon flex items-center justify-center">
-              <StickyNote size={20} className="text-primary" />
+            <div className="w-10 h-10 rounded-2xl glass-icon overflow-hidden">
+              <img src={notifyLogo} alt="Notify" className="w-full h-full object-cover" />
             </div>
             <div>
-              <h1 className="text-2xl font-heading font-extrabold gradient-text">Easy Notes</h1>
+              <h1 className="text-2xl font-heading font-extrabold gradient-text">Notify</h1>
               <p className="text-[11px] text-muted-foreground font-body -mt-0.5">Hi, {userName} 👋</p>
             </div>
           </div>
@@ -201,8 +202,8 @@ export default function Index({ userName, onLogout }: IndexProps) {
       <div className="px-4">
         {filtered.length === 0 ? (
           <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-20">
-            <div className="w-16 h-16 rounded-3xl glass-card mx-auto mb-4 flex items-center justify-center">
-              <StickyNote size={28} className="text-muted-foreground/30" />
+            <div className="w-16 h-16 rounded-3xl glass-card mx-auto mb-4 overflow-hidden">
+              <img src={notifyLogo} alt="Notify" className="w-full h-full object-cover opacity-30" />
             </div>
             <p className="text-muted-foreground font-heading font-bold">No notes yet</p>
             <p className="text-sm text-muted-foreground/60 font-body mt-1">Tap + to create your first note</p>
