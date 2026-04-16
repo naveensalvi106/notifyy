@@ -35,6 +35,21 @@ export function useNotes() {
   useEffect(() => { saveNotes(notes); }, [notes]);
   useEffect(() => { saveOrder(order); }, [order]);
 
+  useEffect(() => {
+    setOrder(prev => {
+      const noteIds = notes.map(note => note.id);
+      const prevValid = prev.filter(id => noteIds.includes(id));
+      const missing = noteIds.filter(id => !prevValid.includes(id));
+      const next = [...prevValid, ...missing];
+
+      if (next.length === prev.length && next.every((id, index) => id === prev[index])) {
+        return prev;
+      }
+
+      return next;
+    });
+  }, [notes]);
+
   const createNote = useCallback((color: NoteColor = 'yellow') => {
     const now = new Date().toISOString();
     const note: Note = {
@@ -74,15 +89,19 @@ export function useNotes() {
 
   const reorderNotes = useCallback((fromId: string, toId: string) => {
     setOrder(prev => {
-      const newOrder = [...prev];
-      const fromIdx = newOrder.indexOf(fromId);
-      const toIdx = newOrder.indexOf(toId);
-      if (fromIdx === -1 || toIdx === -1) return prev;
-      newOrder.splice(fromIdx, 1);
-      newOrder.splice(toIdx, 0, fromId);
-      return newOrder;
+      const noteIds = notes.map(note => note.id);
+      const normalized = [...prev.filter(id => noteIds.includes(id)), ...noteIds.filter(id => !prev.includes(id))];
+      const fromIdx = normalized.indexOf(fromId);
+      const toIdx = normalized.indexOf(toId);
+
+      if (fromIdx === -1 || toIdx === -1 || fromIdx === toIdx) return normalized;
+
+      const next = [...normalized];
+      const [moved] = next.splice(fromIdx, 1);
+      next.splice(toIdx, 0, moved);
+      return next;
     });
-  }, []);
+  }, [notes]);
 
   const filteredNotes = notes
     .filter(n => {

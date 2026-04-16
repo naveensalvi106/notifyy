@@ -33,6 +33,7 @@ export default function Index({ userName, onLogout }: IndexProps) {
   const [editingCatIdx, setEditingCatIdx] = useState<number | null>(null);
   const [editCatName, setEditCatName] = useState('');
   const [dragOverId, setDragOverId] = useState<string | null>(null);
+  const [dragId, setDragId] = useState<string | null>(null);
 
   useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(customCategories)); }, [customCategories]);
 
@@ -71,19 +72,21 @@ export default function Index({ userName, onLogout }: IndexProps) {
     setShowNewColorPicker(false);
   };
 
-  // Drag handlers
-  const [dragId, setDragId] = useState<string | null>(null);
-
   const handleDragStart = (_e: React.DragEvent, noteId: string) => {
     setDragId(noteId);
   };
 
-  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
+  const handleDragOver = (_e: React.DragEvent, noteId?: string) => {
+    if (noteId && noteId !== dragId) setDragOverId(noteId);
+  };
 
   const handleDrop = (_e: React.DragEvent, targetId: string) => {
-    if (dragId && dragId !== targetId) {
-      reorderNotes(dragId, targetId);
-    }
+    if (dragId && dragId !== targetId) reorderNotes(dragId, targetId);
+    setDragId(null);
+    setDragOverId(null);
+  };
+
+  const handleDragEnd = () => {
     setDragId(null);
     setDragOverId(null);
   };
@@ -209,17 +212,23 @@ export default function Index({ userName, onLogout }: IndexProps) {
             <p className="text-sm text-muted-foreground/60 font-body mt-1">Tap + to create your first note</p>
           </motion.div>
         ) : (
-          <div className="columns-2 gap-3 space-y-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3 items-start">
             {filtered.map((note, i) => (
-              <div key={note.id} className="break-inside-avoid">
+              <div
+                key={note.id}
+                className={`transition-transform ${dragOverId === note.id ? 'scale-[0.985]' : ''}`}
+              >
                 <NoteCard
                   note={note}
                   index={i}
+                  isDragging={dragId === note.id}
+                  isDropTarget={dragOverId === note.id && dragId !== note.id}
                   onClick={() => setEditingId(note.id)}
                   onPin={() => togglePin(note.id)}
                   onDragStart={handleDragStart}
-                  onDragOver={handleDragOver}
+                  onDragOver={e => handleDragOver(e, note.id)}
                   onDrop={handleDrop}
+                  onDragEnd={handleDragEnd}
                 />
               </div>
             ))}
