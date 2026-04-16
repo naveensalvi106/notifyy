@@ -172,9 +172,11 @@ export default function Login({ onLogin }: LoginPageProps) {
         <motion.button
           whileTap={{ scale: 0.95 }}
           type="button"
+          onClick={handleGoogleLogin}
+          disabled={loading}
           className="w-full py-3 rounded-2xl glass-btn font-body font-bold text-sm text-foreground/70"
         >
-          Google
+          {loading ? 'Signing in...' : 'Google'}
         </motion.button>
 
         {/* Toggle */}
