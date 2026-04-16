@@ -3,13 +3,6 @@ import { format } from 'date-fns';
 import { Pin, Bell, CheckSquare, GitBranch, Music, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
 
-interface NoteCardProps {
-  note: Note;
-  onClick: () => void;
-  onPin: () => void;
-  index: number;
-}
-
 const colorClasses: Record<string, string> = {
   yellow: 'note-card-yellow',
   pink: 'note-card-pink',
@@ -19,6 +12,13 @@ const colorClasses: Record<string, string> = {
   orange: 'note-card-orange',
   mint: 'note-card-mint',
 };
+
+interface NoteCardProps {
+  note: Note;
+  onClick: () => void;
+  onPin: () => void;
+  index: number;
+}
 
 export default function NoteCard({ note, onClick, onPin, index }: NoteCardProps) {
   const checkedCount = note.checklist.filter(c => c.checked).length;
@@ -31,12 +31,12 @@ export default function NoteCard({ note, onClick, onPin, index }: NoteCardProps)
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-pointer bevel-card hover:shadow-elevated transition-shadow relative group`}
+      className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-pointer glass-card transition-all hover:scale-[1.02] relative group`}
       onClick={onClick}
     >
       <button
         onClick={(e) => { e.stopPropagation(); onPin(); }}
-        className={`absolute top-3 right-3 p-1.5 rounded-lg bevel-icon transition-opacity ${note.pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}
+        className={`absolute top-3 right-3 p-1.5 rounded-xl glass-icon transition-opacity ${note.pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}
       >
         <Pin size={13} className={note.pinned ? 'text-primary fill-current' : 'text-foreground/50'} />
       </button>
@@ -46,61 +46,51 @@ export default function NoteCard({ note, onClick, onPin, index }: NoteCardProps)
       </p>
 
       {note.title && (
-        <h3 className="font-heading font-bold text-foreground text-base mb-1 line-clamp-1">
-          {note.title}
-        </h3>
+        <h3 className="font-heading font-bold text-foreground text-base mb-1 line-clamp-1">{note.title}</h3>
       )}
 
       {preview && (
-        <p className="text-sm text-foreground/70 font-body line-clamp-3 mb-2 italic">
-          {preview}
-        </p>
+        <p className="text-sm text-foreground/65 font-body line-clamp-3 mb-2 italic">{preview}</p>
       )}
 
       {note.checklist.length > 0 && (
-        <div className="space-y-1 mb-2">
+        <div className="space-y-1.5 mb-2">
           {note.checklist.slice(0, 3).map(item => (
             <div key={item.id} className="flex items-center gap-2 text-sm">
-              <span className={`w-4 h-4 rounded bevel-icon flex-shrink-0 flex items-center justify-center text-[10px] ${item.checked ? 'text-primary-foreground' : ''}`}
-                style={item.checked ? { background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(210 85% 48%))' } : {}}>
+              <span className={`w-4 h-4 rounded-md flex-shrink-0 flex items-center justify-center text-[10px] ${item.checked ? 'glass-checkbox-checked text-primary-foreground' : 'glass-icon'}`}>
                 {item.checked && '✓'}
               </span>
-              <span className={`truncate ${item.checked ? 'line-through text-foreground/40' : 'text-foreground/70'}`}>
-                {item.text}
-              </span>
+              <span className={`truncate ${item.checked ? 'line-through text-foreground/35' : 'text-foreground/70'}`}>{item.text}</span>
             </div>
           ))}
-          {note.checklist.length > 3 && (
-            <p className="text-xs text-muted-foreground">+{note.checklist.length - 3} more</p>
-          )}
+          {note.checklist.length > 3 && <p className="text-xs text-muted-foreground">+{note.checklist.length - 3} more</p>}
         </div>
       )}
 
-      <div className="flex items-center gap-2 mt-2 flex-wrap">
+      <div className="flex items-center gap-1.5 mt-2 flex-wrap">
         {note.checklist.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
-            <CheckSquare size={11} /> {checkedCount}/{note.checklist.length}
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground px-2 py-0.5 rounded-lg glass-badge">
+            <CheckSquare size={10} /> {checkedCount}/{note.checklist.length}
           </span>
         )}
         {note.mindmap.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
-            <GitBranch size={11} /> Map
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground px-2 py-0.5 rounded-lg glass-badge">
+            <GitBranch size={10} /> Map
           </span>
         )}
         {audioCount > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
-            <Music size={11} /> {audioCount}
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground px-2 py-0.5 rounded-lg glass-badge">
+            <Music size={10} /> {audioCount}
           </span>
         )}
         {videoCount > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
-            <Video size={11} /> {videoCount}
+          <span className="flex items-center gap-1 text-[11px] text-muted-foreground px-2 py-0.5 rounded-lg glass-badge">
+            <Video size={10} /> {videoCount}
           </span>
         )}
         {note.reminder?.enabled && (
-          <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md text-primary-foreground"
-            style={{ background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(210 85% 48%))' }}>
-            <Bell size={11} />
+          <span className="flex items-center gap-1 text-[11px] px-2 py-0.5 rounded-lg glass-primary text-primary-foreground">
+            <Bell size={10} />
           </span>
         )}
       </div>
