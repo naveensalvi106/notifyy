@@ -24,9 +24,10 @@ interface NoteEditorProps {
   onUpdate: (id: string, updates: Partial<Note>) => void;
   onDelete: (id: string) => void;
   onBack: () => void;
+  categories?: string[];
 }
 
-export default function NoteEditor({ note, onUpdate, onDelete, onBack }: NoteEditorProps) {
+export default function NoteEditor({ note, onUpdate, onDelete, onBack, categories = [] }: NoteEditorProps) {
   const [showMore, setShowMore] = useState(false);
   const [activeTab, setActiveTab] = useState<'note' | 'checklist' | 'mindmap'>('note');
 
@@ -68,13 +69,14 @@ export default function NoteEditor({ note, onUpdate, onDelete, onBack }: NoteEdi
           >
             <ColorPicker selected={note.color} onChange={(color) => onUpdate(note.id, { color })} />
             <div className="flex items-center gap-3">
-              <input
-                type="text"
+              <select
                 value={note.category}
                 onChange={e => onUpdate(note.id, { category: e.target.value })}
-                placeholder="Category"
-                className="text-sm font-body bg-foreground/5 rounded-lg px-3 py-1.5 outline-none w-32"
-              />
+                className="text-sm font-body bg-foreground/5 rounded-lg px-3 py-1.5 outline-none appearance-none cursor-pointer"
+              >
+                <option value="All">No category</option>
+                {categories.map(c => <option key={c} value={c}>{c}</option>)}
+              </select>
               <button
                 onClick={() => { onDelete(note.id); onBack(); }}
                 className="flex items-center gap-1 text-destructive text-sm font-body hover:text-destructive/80"
