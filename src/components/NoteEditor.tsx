@@ -24,6 +24,7 @@ interface NoteEditorProps {
   onUpdate: (id: string, updates: Partial<Note>) => void;
   onDelete: (id: string) => void;
   onBack: () => void;
+  categories?: string[];
 }
 
 export default function NoteEditor({ note, onUpdate, onDelete, onBack }: NoteEditorProps) {
