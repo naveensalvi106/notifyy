@@ -1,24 +1,14 @@
 import { NoteColor } from '@/types/note';
 
-const colors: { value: NoteColor; label: string }[] = [
-  { value: 'yellow', label: 'Yellow' },
-  { value: 'pink', label: 'Pink' },
-  { value: 'blue', label: 'Blue' },
-  { value: 'green', label: 'Green' },
-  { value: 'purple', label: 'Purple' },
-  { value: 'orange', label: 'Orange' },
-  { value: 'mint', label: 'Mint' },
+const colors: { value: NoteColor; label: string; gradient: string }[] = [
+  { value: 'yellow', label: 'Yellow', gradient: 'linear-gradient(145deg, hsl(48 95% 87%), hsl(45 85% 72%))' },
+  { value: 'pink', label: 'Pink', gradient: 'linear-gradient(145deg, hsl(340 85% 90%), hsl(335 75% 75%))' },
+  { value: 'blue', label: 'Blue', gradient: 'linear-gradient(145deg, hsl(210 85% 90%), hsl(215 80% 75%))' },
+  { value: 'green', label: 'Green', gradient: 'linear-gradient(145deg, hsl(145 65% 87%), hsl(150 55% 72%))' },
+  { value: 'purple', label: 'Purple', gradient: 'linear-gradient(145deg, hsl(270 65% 90%), hsl(265 55% 75%))' },
+  { value: 'orange', label: 'Orange', gradient: 'linear-gradient(145deg, hsl(25 95% 87%), hsl(20 85% 72%))' },
+  { value: 'mint', label: 'Mint', gradient: 'linear-gradient(145deg, hsl(170 55% 87%), hsl(175 50% 72%))' },
 ];
-
-const dotColors: Record<string, string> = {
-  yellow: 'bg-note-yellow border-yellow-400',
-  pink: 'bg-note-pink border-pink-400',
-  blue: 'bg-note-blue border-blue-400',
-  green: 'bg-note-green border-green-400',
-  purple: 'bg-note-purple border-purple-400',
-  orange: 'bg-note-orange border-orange-400',
-  mint: 'bg-note-mint border-teal-400',
-};
 
 interface ColorPickerProps {
   selected: NoteColor;
@@ -27,12 +17,13 @@ interface ColorPickerProps {
 
 export default function ColorPicker({ selected, onChange }: ColorPickerProps) {
   return (
-    <div className="flex gap-2">
+    <div className="flex gap-2.5">
       {colors.map(c => (
         <button
           key={c.value}
           onClick={() => onChange(c.value)}
-          className={`w-7 h-7 rounded-full border-2 transition-transform ${dotColors[c.value]} ${selected === c.value ? 'scale-125 border-foreground/40' : 'border-transparent'}`}
+          className={`w-8 h-8 rounded-xl bevel-btn transition-transform ${selected === c.value ? 'scale-110 ring-2 ring-primary/40 ring-offset-1' : ''}`}
+          style={{ background: c.gradient }}
           title={c.label}
         />
       ))}
