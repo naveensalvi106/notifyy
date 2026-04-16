@@ -3,7 +3,7 @@ import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteColor } from '@/types/note';
 import NoteCard from '@/components/NoteCard';
 import NoteEditor from '@/components/NoteEditor';
-import { Plus, Search, StickyNote, X, Check } from 'lucide-react';
+import { Plus, Search, StickyNote, X, Check, LogOut, User } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 const CATEGORIES_KEY = 'easynotes_categories';
@@ -16,8 +16,13 @@ const loadCategories = (): string[] => {
 
 const quickColors: NoteColor[] = ['yellow', 'pink', 'blue', 'green', 'mint'];
 
-export default function Index() {
-  const { notes, createNote, updateNote, deleteNote, togglePin, searchQuery, setSearchQuery } = useNotes();
+interface IndexProps {
+  userName: string;
+  onLogout: () => void;
+}
+
+export default function Index({ userName, onLogout }: IndexProps) {
+  const { notes, createNote, updateNote, deleteNote, togglePin, reorderNotes, searchQuery, setSearchQuery } = useNotes();
   const [editingId, setEditingId] = useState<string | null>(null);
   const [selectedCategory, setSelectedCategory] = useState('All');
   const [showNewColorPicker, setShowNewColorPicker] = useState(false);
@@ -26,6 +31,7 @@ export default function Index() {
   const [newCatName, setNewCatName] = useState('');
   const [editingCatIdx, setEditingCatIdx] = useState<number | null>(null);
   const [editCatName, setEditCatName] = useState('');
+  const [dragOverId, setDragOverId] = useState<string | null>(null);
 
   useEffect(() => { localStorage.setItem(CATEGORIES_KEY, JSON.stringify(customCategories)); }, [customCategories]);
 
@@ -64,6 +70,23 @@ export default function Index() {
     setShowNewColorPicker(false);
   };
 
+  // Drag handlers
+  const [dragId, setDragId] = useState<string | null>(null);
+
+  const handleDragStart = (_e: React.DragEvent, noteId: string) => {
+    setDragId(noteId);
+  };
+
+  const handleDragOver = (_e: React.DragEvent) => {};
+
+  const handleDrop = (_e: React.DragEvent, targetId: string) => {
+    if (dragId && dragId !== targetId) {
+      reorderNotes(dragId, targetId);
+    }
+    setDragId(null);
+    setDragOverId(null);
+  };
+
   if (editingNote) {
     return (
       <NoteEditor
@@ -85,9 +108,20 @@ export default function Index() {
             <div className="w-10 h-10 rounded-2xl glass-icon flex items-center justify-center">
               <StickyNote size={20} className="text-primary" />
             </div>
-            <h1 className="text-2xl font-heading font-extrabold gradient-text">Easy Notes</h1>
+            <div>
+              <h1 className="text-2xl font-heading font-extrabold gradient-text">Easy Notes</h1>
+              <p className="text-[11px] text-muted-foreground font-body -mt-0.5">Hi, {userName} 👋</p>
+            </div>
           </div>
-          <span className="text-xs font-body text-muted-foreground px-3 py-1.5 rounded-xl glass-badge">{notes.length} notes</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xs font-body text-muted-foreground px-3 py-1.5 rounded-xl glass-badge">{notes.length} notes</span>
+            <button
+              onClick={onLogout}
+              className="w-9 h-9 rounded-xl glass-icon flex items-center justify-center text-muted-foreground hover:text-destructive transition-colors"
+            >
+              <LogOut size={16} />
+            </button>
+          </div>
         </div>
 
         {/* Search */}
@@ -177,7 +211,15 @@ export default function Index() {
           <div className="columns-2 gap-3 space-y-3">
             {filtered.map((note, i) => (
               <div key={note.id} className="break-inside-avoid">
-                <NoteCard note={note} index={i} onClick={() => setEditingId(note.id)} onPin={() => togglePin(note.id)} />
+                <NoteCard
+                  note={note}
+                  index={i}
+                  onClick={() => setEditingId(note.id)}
+                  onPin={() => togglePin(note.id)}
+                  onDragStart={handleDragStart}
+                  onDragOver={handleDragOver}
+                  onDrop={handleDrop}
+                />
               </div>
             ))}
           </div>
