@@ -4,6 +4,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { Toaster } from "@/components/ui/toaster";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import type { Session } from "@supabase/supabase-js";
 import Index from "./pages/Index.tsx";
 import Login from "./pages/Login.tsx";
 import NotFound from "./pages/NotFound.tsx";
@@ -11,24 +13,31 @@ import NotFound from "./pages/NotFound.tsx";
 const queryClient = new QueryClient();
 
 const App = () => {
-  const [user, setUser] = useState<string | null>(null);
+  const [session, setSession] = useState<Session | null>(null);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem('easynotes_user');
-      if (raw) {
-        const data = JSON.parse(raw);
-        setUser(data.name);
-      }
-    } catch {}
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setSession(session);
+      setLoading(false);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setSession(session);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const handleLogin = (name: string) => setUser(name);
+  const userName = session?.user?.user_metadata?.full_name
+    || session?.user?.email?.split('@')[0]
+    || 'User';
 
-  const handleLogout = () => {
-    localStorage.removeItem('easynotes_user');
-    setUser(null);
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
   };
+
+  if (loading) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
@@ -40,10 +49,10 @@ const App = () => {
             <Route
               path="/"
               element={
-                user ? (
-                  <Index userName={user} onLogout={handleLogout} />
+                session ? (
+                  <Index userName={userName} onLogout={handleLogout} />
                 ) : (
-                  <Login onLogin={handleLogin} />
+                  <Login onLogin={() => {}} />
                 )
               }
             />
