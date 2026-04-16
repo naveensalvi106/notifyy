@@ -22,7 +22,9 @@ export default function ColorPicker({ selected, onChange }: ColorPickerProps) {
         <button
           key={c.value}
           onClick={() => onChange(c.value)}
-          className={`w-8 h-8 rounded-xl bevel-btn transition-transform ${selected === c.value ? 'scale-110 ring-2 ring-primary/40 ring-offset-1' : ''}`}
+          className={`w-8 h-8 rounded-xl glass-icon transition-all ${
+            selected === c.value ? 'scale-110 ring-2 ring-primary/30 ring-offset-1' : 'hover:scale-105'
+          }`}
           style={{ background: c.gradient }}
           title={c.label}
         />
