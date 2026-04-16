@@ -75,13 +75,13 @@
 
 @layer utilities {
   /* Note card gradients */
-  .note-card-yellow { background: linear-gradient(145deg, hsl(48 95% 87%), hsl(45 90% 80%)); }
-  .note-card-pink { background: linear-gradient(145deg, hsl(340 85% 90%), hsl(335 80% 83%)); }
-  .note-card-blue { background: linear-gradient(145deg, hsl(210 85% 90%), hsl(215 80% 83%)); }
-  .note-card-green { background: linear-gradient(145deg, hsl(145 65% 87%), hsl(150 60% 80%)); }
-  .note-card-purple { background: linear-gradient(145deg, hsl(270 65% 90%), hsl(265 60% 83%)); }
-  .note-card-orange { background: linear-gradient(145deg, hsl(25 95% 87%), hsl(20 90% 80%)); }
-  .note-card-mint { background: linear-gradient(145deg, hsl(170 55% 87%), hsl(175 50% 80%)); }
+  .note-card-yellow { background: linear-gradient(145deg, hsl(48 95% 87%), hsl(45 90% 80%)) !important; }
+  .note-card-pink { background: linear-gradient(145deg, hsl(340 85% 90%), hsl(335 80% 83%)) !important; }
+  .note-card-blue { background: linear-gradient(145deg, hsl(210 85% 90%), hsl(215 80% 83%)) !important; }
+  .note-card-green { background: linear-gradient(145deg, hsl(145 65% 87%), hsl(150 60% 80%)) !important; }
+  .note-card-purple { background: linear-gradient(145deg, hsl(270 65% 90%), hsl(265 60% 83%)) !important; }
+  .note-card-orange { background: linear-gradient(145deg, hsl(25 95% 87%), hsl(20 90% 80%)) !important; }
+  .note-card-mint { background: linear-gradient(145deg, hsl(170 55% 87%), hsl(175 50% 80%)) !important; }
 
   /* ===== LIQUID GLASS SYSTEM ===== */
 
