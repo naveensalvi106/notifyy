@@ -28,6 +28,7 @@ export function useNotes() {
       title: '',
       content: '',
       color,
+      media: [],
       checklist: [],
       mindmap: [],
       pinned: false,

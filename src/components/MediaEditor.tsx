@@ -106,7 +106,7 @@ function YoutubePlayer({ attachment, onRename, onDelete }: {
       <div className="p-3 flex items-center gap-2">
         <div className="w-8 h-8 rounded-lg bevel-icon flex items-center justify-center flex-shrink-0"
           style={{ background: 'linear-gradient(145deg, hsl(0 80% 55%), hsl(0 80% 45%))' }}>
-          <Youtube size={14} className="text-primary-foreground" />
+          <Video size={14} className="text-primary-foreground" />
         </div>
         <div className="flex-1 min-w-0">
           {editing ? (
@@ -213,7 +213,7 @@ export default function MediaEditor({ media, onChange }: MediaEditorProps) {
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-body font-semibold bevel-btn text-foreground"
           style={{ background: 'linear-gradient(145deg, hsl(var(--card)), hsl(40 20% 94%))' }}
         >
-          <Youtube size={15} /> YouTube
+          <Video size={15} /> YouTube
         </button>
       </div>
 
