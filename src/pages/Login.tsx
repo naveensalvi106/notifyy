@@ -2,6 +2,9 @@ import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
 import notifyLogo from '@/assets/notify-logo.jpeg';
+import { lovable } from '@/integrations/lovable/index';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface LoginPageProps {
   onLogin: (name: string) => void;
@@ -14,11 +17,46 @@ export default function Login({ onLogin }: LoginPageProps) {
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const [loading, setLoading] = useState(false);
+
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    const displayName = isSignup ? name.trim() || 'User' : email.split('@')[0] || 'User';
-    localStorage.setItem('easynotes_user', JSON.stringify({ name: displayName, email }));
-    onLogin(displayName);
+    setLoading(true);
+    try {
+      if (isSignup) {
+        const { error } = await supabase.auth.signUp({
+          email,
+          password,
+          options: { data: { full_name: name.trim() || 'User' } },
+        });
+        if (error) throw error;
+        toast.success('Check your email to confirm your account!');
+      } else {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) throw error;
+      }
+    } catch (err: any) {
+      toast.error(err.message || 'Authentication failed');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    setLoading(true);
+    try {
+      const result = await lovable.auth.signInWithOAuth('google', {
+        redirect_uri: window.location.origin,
+      });
+      if (result.error) {
+        toast.error(result.error.message || 'Google sign-in failed');
+      }
+      if (result.redirected) return;
+    } catch (err: any) {
+      toast.error(err.message || 'Google sign-in failed');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -134,9 +172,11 @@ export default function Login({ onLogin }: LoginPageProps) {
         <motion.button
           whileTap={{ scale: 0.95 }}
           type="button"
+          onClick={handleGoogleLogin}
+          disabled={loading}
           className="w-full py-3 rounded-2xl glass-btn font-body font-bold text-sm text-foreground/70"
         >
-          Google
+          {loading ? 'Signing in...' : 'Google'}
         </motion.button>
 
         {/* Toggle */}
