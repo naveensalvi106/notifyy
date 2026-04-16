@@ -19,12 +19,15 @@ interface NoteCardProps {
   onClick: () => void;
   onPin: () => void;
   index: number;
+  isDragging?: boolean;
+  isDropTarget?: boolean;
   onDragStart?: (e: React.DragEvent, noteId: string) => void;
   onDragOver?: (e: React.DragEvent) => void;
   onDrop?: (e: React.DragEvent, noteId: string) => void;
+  onDragEnd?: () => void;
 }
 
-export default function NoteCard({ note, onClick, onPin, index, onDragStart, onDragOver, onDrop }: NoteCardProps) {
+export default function NoteCard({ note, onClick, onPin, index, isDragging = false, isDropTarget = false, onDragStart, onDragOver, onDrop, onDragEnd }: NoteCardProps) {
   const checkedCount = note.checklist.filter(c => c.checked).length;
   const preview = note.content.slice(0, 120);
   const audioCount = (note.media || []).filter(m => m.type === 'audio').length;
@@ -33,15 +36,17 @@ export default function NoteCard({ note, onClick, onPin, index, onDragStart, onD
   return (
     <div
       draggable
-      onDragStart={e => { e.dataTransfer.setData('text/plain', note.id); onDragStart?.(e, note.id); }}
-      onDragOver={e => { e.preventDefault(); onDragOver?.(e); }}
+      onDragStart={e => { e.dataTransfer.effectAllowed = 'move'; e.dataTransfer.setData('text/plain', note.id); onDragStart?.(e, note.id); }}
+      onDragOver={e => { e.preventDefault(); e.dataTransfer.dropEffect = 'move'; onDragOver?.(e); }}
       onDrop={e => { e.preventDefault(); onDrop?.(e, note.id); }}
+      onDragEnd={onDragEnd}
+      className="relative"
     >
       <motion.div
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.04, duration: 0.3 }}
-        className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group`}
+        className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group ${isDragging ? 'opacity-55 scale-[0.98]' : ''} ${isDropTarget ? 'ring-2 ring-primary/40 shadow-[0_0_0_1px_hsl(var(--primary)/0.15)]' : ''}`}
         onClick={onClick}
       >
       {/* Drag handle */}
