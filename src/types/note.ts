@@ -16,7 +16,9 @@ export interface MindMapNode {
 
 export interface NoteReminder {
   id: string;
-  datetime: string; // ISO string
+  time: string; // HH:mm format
+  daily: boolean;
+  datetime: string;
   enabled: boolean;
 }
 
