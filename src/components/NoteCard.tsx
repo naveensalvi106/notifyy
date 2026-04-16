@@ -1,7 +1,14 @@
 import { Note } from '@/types/note';
 import { format } from 'date-fns';
-import { Pin, Bell, CheckSquare, GitBranch } from 'lucide-react';
+import { Pin, Bell, CheckSquare, GitBranch, Music, Video } from 'lucide-react';
 import { motion } from 'framer-motion';
+
+interface NoteCardProps {
+  note: Note;
+  onClick: () => void;
+  onPin: () => void;
+  index: number;
+}
 
 const colorClasses: Record<string, string> = {
   yellow: 'note-card-yellow',
@@ -13,30 +20,25 @@ const colorClasses: Record<string, string> = {
   mint: 'note-card-mint',
 };
 
-interface NoteCardProps {
-  note: Note;
-  onClick: () => void;
-  onPin: () => void;
-  index: number;
-}
-
 export default function NoteCard({ note, onClick, onPin, index }: NoteCardProps) {
   const checkedCount = note.checklist.filter(c => c.checked).length;
   const preview = note.content.slice(0, 120);
+  const audioCount = (note.media || []).filter(m => m.type === 'audio').length;
+  const videoCount = (note.media || []).filter(m => m.type === 'youtube').length;
 
   return (
     <motion.div
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
-      className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-pointer shadow-card hover:shadow-elevated transition-shadow relative group`}
+      className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-pointer bevel-card hover:shadow-elevated transition-shadow relative group`}
       onClick={onClick}
     >
       <button
         onClick={(e) => { e.stopPropagation(); onPin(); }}
-        className={`absolute top-3 right-3 p-1 rounded-full transition-opacity ${note.pinned ? 'opacity-100 text-primary' : 'opacity-0 group-hover:opacity-60 text-muted-foreground'}`}
+        className={`absolute top-3 right-3 p-1.5 rounded-lg bevel-icon transition-opacity ${note.pinned ? 'opacity-100' : 'opacity-0 group-hover:opacity-60'}`}
       >
-        <Pin size={14} className={note.pinned ? 'fill-current' : ''} />
+        <Pin size={13} className={note.pinned ? 'text-primary fill-current' : 'text-foreground/50'} />
       </button>
 
       <p className="text-xs text-muted-foreground font-body mb-1">
@@ -59,7 +61,8 @@ export default function NoteCard({ note, onClick, onPin, index }: NoteCardProps)
         <div className="space-y-1 mb-2">
           {note.checklist.slice(0, 3).map(item => (
             <div key={item.id} className="flex items-center gap-2 text-sm">
-              <span className={`w-3.5 h-3.5 rounded border flex-shrink-0 flex items-center justify-center text-[10px] ${item.checked ? 'bg-primary border-primary text-primary-foreground' : 'border-foreground/30'}`}>
+              <span className={`w-4 h-4 rounded bevel-icon flex-shrink-0 flex items-center justify-center text-[10px] ${item.checked ? 'text-primary-foreground' : ''}`}
+                style={item.checked ? { background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(210 85% 48%))' } : {}}>
                 {item.checked && '✓'}
               </span>
               <span className={`truncate ${item.checked ? 'line-through text-foreground/40' : 'text-foreground/70'}`}>
@@ -73,20 +76,31 @@ export default function NoteCard({ note, onClick, onPin, index }: NoteCardProps)
         </div>
       )}
 
-      <div className="flex items-center gap-2 mt-2">
+      <div className="flex items-center gap-2 mt-2 flex-wrap">
         {note.checklist.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <CheckSquare size={12} /> {checkedCount}/{note.checklist.length}
+          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
+            <CheckSquare size={11} /> {checkedCount}/{note.checklist.length}
           </span>
         )}
         {note.mindmap.length > 0 && (
-          <span className="flex items-center gap-1 text-xs text-muted-foreground">
-            <GitBranch size={12} /> Mindmap
+          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
+            <GitBranch size={11} /> Map
+          </span>
+        )}
+        {audioCount > 0 && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
+            <Music size={11} /> {audioCount}
+          </span>
+        )}
+        {videoCount > 0 && (
+          <span className="flex items-center gap-1 text-xs text-muted-foreground px-2 py-0.5 rounded-md bevel-icon">
+            <Video size={11} /> {videoCount}
           </span>
         )}
         {note.reminder?.enabled && (
-          <span className="flex items-center gap-1 text-xs text-primary">
-            <Bell size={12} />
+          <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded-md text-primary-foreground"
+            style={{ background: 'linear-gradient(145deg, hsl(var(--primary)), hsl(210 85% 48%))' }}>
+            <Bell size={11} />
           </span>
         )}
       </div>

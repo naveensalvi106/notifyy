@@ -15,16 +15,16 @@
     --popover: 0 0% 100%;
     --popover-foreground: 220 20% 15%;
 
-    --primary: 210 70% 55%;
+    --primary: 210 85% 55%;
     --primary-foreground: 0 0% 100%;
 
-    --secondary: 340 60% 65%;
+    --secondary: 340 70% 60%;
     --secondary-foreground: 0 0% 100%;
 
     --muted: 40 20% 93%;
     --muted-foreground: 220 10% 50%;
 
-    --accent: 160 45% 50%;
+    --accent: 160 55% 45%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 72% 55%;
@@ -32,17 +32,17 @@
 
     --border: 40 15% 88%;
     --input: 40 15% 88%;
-    --ring: 210 70% 55%;
+    --ring: 210 85% 55%;
 
     --radius: 1rem;
 
-    --note-yellow: 48 95% 88%;
-    --note-pink: 340 80% 90%;
-    --note-blue: 210 80% 90%;
-    --note-green: 145 60% 88%;
-    --note-purple: 270 60% 90%;
-    --note-orange: 25 90% 88%;
-    --note-mint: 170 50% 88%;
+    --note-yellow: 48 95% 85%;
+    --note-pink: 340 85% 88%;
+    --note-blue: 210 85% 88%;
+    --note-green: 145 65% 85%;
+    --note-purple: 270 65% 88%;
+    --note-orange: 25 95% 85%;
+    --note-mint: 170 55% 85%;
 
     --shadow-soft: 0 4px 20px -4px hsl(220 20% 15% / 0.08);
     --shadow-card: 0 2px 12px -2px hsl(220 20% 15% / 0.06);
@@ -78,11 +78,90 @@
 }
 
 @layer utilities {
-  .note-card-yellow { background-color: hsl(var(--note-yellow)); }
-  .note-card-pink { background-color: hsl(var(--note-pink)); }
-  .note-card-blue { background-color: hsl(var(--note-blue)); }
-  .note-card-green { background-color: hsl(var(--note-green)); }
-  .note-card-purple { background-color: hsl(var(--note-purple)); }
-  .note-card-orange { background-color: hsl(var(--note-orange)); }
-  .note-card-mint { background-color: hsl(var(--note-mint)); }
+  .note-card-yellow { background: linear-gradient(145deg, hsl(48 95% 87%), hsl(45 90% 80%)); }
+  .note-card-pink { background: linear-gradient(145deg, hsl(340 85% 90%), hsl(335 80% 83%)); }
+  .note-card-blue { background: linear-gradient(145deg, hsl(210 85% 90%), hsl(215 80% 83%)); }
+  .note-card-green { background: linear-gradient(145deg, hsl(145 65% 87%), hsl(150 60% 80%)); }
+  .note-card-purple { background: linear-gradient(145deg, hsl(270 65% 90%), hsl(265 60% 83%)); }
+  .note-card-orange { background: linear-gradient(145deg, hsl(25 95% 87%), hsl(20 90% 80%)); }
+  .note-card-mint { background: linear-gradient(145deg, hsl(170 55% 87%), hsl(175 50% 80%)); }
+
+  /* 3D Bevel styles */
+  .bevel-btn {
+    border: none;
+    box-shadow:
+      0 2px 0 0 hsl(0 0% 0% / 0.15),
+      0 -1px 0 0 hsl(0 0% 100% / 0.25) inset,
+      0 2px 4px 0 hsl(0 0% 0% / 0.1);
+    transition: all 0.15s ease;
+  }
+  .bevel-btn:active {
+    box-shadow:
+      0 0px 0 0 hsl(0 0% 0% / 0.15),
+      0 1px 2px 0 hsl(0 0% 0% / 0.15) inset;
+    transform: translateY(1px);
+  }
+
+  .bevel-card {
+    box-shadow:
+      0 3px 0 0 hsl(0 0% 0% / 0.07),
+      0 -1px 0 0 hsl(0 0% 100% / 0.5) inset,
+      0 1px 0 0 hsl(0 0% 0% / 0.05) inset,
+      0 4px 12px -2px hsl(0 0% 0% / 0.08);
+  }
+
+  .bevel-icon {
+    background: linear-gradient(180deg, hsl(0 0% 100% / 0.3), hsl(0 0% 0% / 0.05));
+    box-shadow:
+      0 2px 4px -1px hsl(0 0% 0% / 0.12),
+      0 -1px 0 0 hsl(0 0% 100% / 0.4) inset,
+      0 1px 0 0 hsl(0 0% 0% / 0.08) inset;
+  }
+
+  .bevel-tab {
+    box-shadow:
+      0 2px 0 0 hsl(0 0% 0% / 0.1),
+      0 -1px 0 0 hsl(0 0% 100% / 0.3) inset;
+    transition: all 0.15s ease;
+  }
+  .bevel-tab:active {
+    box-shadow: 0 1px 2px 0 hsl(0 0% 0% / 0.12) inset;
+    transform: translateY(1px);
+  }
+
+  .bevel-tab-active {
+    background: linear-gradient(180deg, hsl(var(--primary)), hsl(210 85% 48%));
+    box-shadow:
+      0 2px 0 0 hsl(210 85% 35%),
+      0 -1px 0 0 hsl(0 0% 100% / 0.3) inset,
+      0 3px 8px -2px hsl(210 85% 45% / 0.4);
+  }
+
+  .bevel-fab {
+    background: linear-gradient(180deg, hsl(210 85% 62%), hsl(210 85% 48%));
+    box-shadow:
+      0 4px 0 0 hsl(210 85% 38%),
+      0 -1px 0 0 hsl(0 0% 100% / 0.3) inset,
+      0 6px 20px -4px hsl(210 85% 45% / 0.5);
+  }
+  .bevel-fab:active {
+    box-shadow:
+      0 1px 0 0 hsl(210 85% 38%),
+      0 2px 4px 0 hsl(0 0% 0% / 0.15) inset;
+    transform: translateY(2px);
+  }
+
+  .bevel-search {
+    box-shadow:
+      0 2px 0 0 hsl(0 0% 0% / 0.04),
+      0 -1px 0 0 hsl(0 0% 100% / 0.6) inset,
+      0 1px 3px 0 hsl(0 0% 0% / 0.06) inset;
+  }
+
+  .gradient-text {
+    background: linear-gradient(135deg, hsl(210 85% 50%), hsl(270 65% 55%));
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
 }
