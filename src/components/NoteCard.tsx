@@ -109,6 +109,7 @@ export default function NoteCard({ note, onClick, onPin, index, onDragStart, onD
           </span>
         )}
       </div>
-    </motion.div>
+      </motion.div>
+    </div>
   );
 }
