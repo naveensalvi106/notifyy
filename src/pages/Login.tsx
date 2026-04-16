@@ -125,29 +125,19 @@ export default function Login({ onLogin }: LoginPageProps) {
           </motion.button>
         </form>
 
-        {/* Divider */}
         <div className="flex items-center gap-3 my-5">
           <div className="flex-1 h-px bg-border" />
           <span className="text-xs text-muted-foreground font-body">or continue with</span>
           <div className="flex-1 h-px bg-border" />
         </div>
 
-        {/* Social buttons */}
-        <div className="flex gap-3">
-          {['Google', 'Apple'].map(provider => (
-            <motion.button
-              key={provider}
-              whileTap={{ scale: 0.95 }}
-              onClick={() => {
-                localStorage.setItem('easynotes_user', JSON.stringify({ name: provider + ' User', email: '' }));
-                onLogin(provider + ' User');
-              }}
-              className="flex-1 py-3 rounded-2xl glass-btn font-body font-bold text-sm text-foreground/70"
-            >
-              {provider}
-            </motion.button>
-          ))}
-        </div>
+        <motion.button
+          whileTap={{ scale: 0.95 }}
+          type="button"
+          className="w-full py-3 rounded-2xl glass-btn font-body font-bold text-sm text-foreground/70"
+        >
+          Google
+        </motion.button>
 
         {/* Toggle */}
         <p className="text-center text-sm text-muted-foreground font-body mt-6">
