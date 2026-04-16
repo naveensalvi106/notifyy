@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { StickyNote, Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import { Mail, Lock, User, Eye, EyeOff, ArrowRight } from 'lucide-react';
+import notifyLogo from '@/assets/notify-logo.jpeg';
 
 interface LoginPageProps {
   onLogin: (name: string) => void;
@@ -44,12 +45,12 @@ export default function Login({ onLogin }: LoginPageProps) {
         {/* Logo */}
         <div className="text-center mb-8">
           <motion.div
-            className="w-20 h-20 rounded-3xl glass-strong mx-auto mb-4 flex items-center justify-center"
+            className="w-20 h-20 rounded-3xl glass-strong mx-auto mb-4 overflow-hidden"
             whileHover={{ scale: 1.05, rotate: 5 }}
           >
-            <StickyNote size={36} className="text-primary" />
+            <img src={notifyLogo} alt="Notify" className="w-full h-full object-cover" />
           </motion.div>
-          <h1 className="text-3xl font-heading font-extrabold gradient-text">Easy Notes</h1>
+          <h1 className="text-3xl font-heading font-extrabold gradient-text">Notify</h1>
           <p className="text-sm text-muted-foreground font-body mt-1">
             {isSignup ? 'Create your account' : 'Welcome back'}
           </p>
