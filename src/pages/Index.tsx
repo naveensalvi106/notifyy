@@ -78,7 +78,7 @@ export default function Index({ userName, onLogout }: IndexProps) {
     setDragId(noteId);
   };
 
-  const handleDragOver = (_e: React.DragEvent) => {};
+  const handleDragOver = (e: React.DragEvent) => { e.preventDefault(); };
 
   const handleDrop = (_e: React.DragEvent, targetId: string) => {
     if (dragId && dragId !== targetId) {

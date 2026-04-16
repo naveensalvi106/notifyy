@@ -36,8 +36,8 @@ export default function NoteCard({ note, onClick, onPin, index, onDragStart, onD
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.04, duration: 0.3 }}
       draggable="true"
-      onDragStart={e => { const de = e as unknown as React.DragEvent; de.dataTransfer?.setData('text/plain', note.id); onDragStart?.(de, note.id); }}
-      onDragOver={e => { e.preventDefault(); onDragOver?.(e as unknown as React.DragEvent); }}
+      onDragStart={e => { e.dataTransfer.setData('text/plain', note.id); onDragStart?.(e, note.id); }}
+      onDragOver={e => { e.preventDefault(); onDragOver?.(e); }}
       onDrop={e => { e.preventDefault(); onDrop?.(e as unknown as React.DragEvent, note.id); }}
       className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group`}
       onClick={onClick}
