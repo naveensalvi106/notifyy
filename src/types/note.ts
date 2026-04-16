@@ -9,9 +9,10 @@ export interface ChecklistItem {
 export interface MindMapNode {
   id: string;
   text: string;
-  x: number;
-  y: number;
-  children: string[];
+  description: string;
+  children: MindMapNode[];
+  collapsed: boolean;
+  color: string;
 }
 
 export interface NoteReminder {
