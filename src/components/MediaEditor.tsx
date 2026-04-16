@@ -1,7 +1,7 @@
 import { useState, useRef } from 'react';
 import { MediaAttachment } from '@/types/note';
 import { v4 as uuidv4 } from 'uuid';
-import { Music, Youtube, Pencil, Trash2, Upload, Play, Pause, X, Check, Link } from 'lucide-react';
+import { Music, Video, Pencil, Trash2, Upload, Play, Pause, X, Check, Link } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
 interface MediaEditorProps {
