@@ -3,7 +3,6 @@ import { v4 as uuidv4 } from 'uuid';
 import { Plus, X, ChevronRight, ChevronDown, MessageSquare, GitBranch } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { MindMapNode } from '@/types/note';
-import { motion, AnimatePresence } from 'framer-motion';
 
 
 const branchColors = [
