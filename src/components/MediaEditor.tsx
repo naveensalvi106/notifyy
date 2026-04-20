@@ -1,12 +1,28 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { MediaAttachment } from '@/types/note';
 import { v4 as uuidv4 } from 'uuid';
-import { Music, Video, Pencil, Trash2, Upload, Play, Pause, X, Check, Link } from 'lucide-react';
+import { Music, Video, Pencil, Trash2, Upload, Play, Pause, X, Check, Link, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
+import { saveLocalMedia, getLocalMedia } from '@/lib/db';
+import { soundEffects } from '@/lib/sounds';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 
 interface MediaEditorProps {
   media: MediaAttachment[];
   onChange: (media: MediaAttachment[]) => void;
+  userId: string | null;
 }
 
 function extractYoutubeId(url: string): string | null {
@@ -22,42 +38,210 @@ function AudioPlayer({ attachment, onRename, onDelete }: {
   const [editing, setEditing] = useState(false);
   const [name, setName] = useState(attachment.name);
   const [playing, setPlaying] = useState(false);
+  const [audioUrl, setAudioUrl] = useState<string>('');
+  const [loading, setLoading] = useState(true);
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
   const audioRef = useRef<HTMLAudioElement>(null);
 
-  const togglePlay = () => {
-    if (!audioRef.current) return;
-    if (playing) audioRef.current.pause(); else audioRef.current.play();
-    setPlaying(!playing);
+  useEffect(() => {
+    let objectUrl: string | null = null;
+    
+    const loadMedia = async () => {
+      setLoading(true);
+      try {
+        if (attachment.url.startsWith('local-')) {
+          const mediaItem = await getLocalMedia(attachment.url);
+          if (mediaItem) {
+            objectUrl = URL.createObjectURL(mediaItem.blob);
+            setAudioUrl(objectUrl);
+          }
+        } else {
+          setAudioUrl(attachment.url);
+        }
+      } catch (err) {
+        console.error('Failed to load media:', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadMedia();
+
+    return () => {
+      if (objectUrl) URL.revokeObjectURL(objectUrl);
+    };
+  }, [attachment.url]);
+
+  // Sync src and handle loading
+  useEffect(() => {
+    const audio = audioRef.current;
+    if (!audio || !audioUrl) return;
+
+    audio.src = audioUrl;
+    audio.load();
+
+    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
+    const onLoadedMetadata = () => {
+      if (audio.duration && !isNaN(audio.duration)) {
+        setDuration(audio.duration);
+      }
+    };
+    const onEnded = () => setPlaying(false);
+    
+    audio.addEventListener('timeupdate', onTimeUpdate);
+    audio.addEventListener('loadedmetadata', onLoadedMetadata);
+    audio.addEventListener('ended', onEnded);
+    
+    return () => {
+      audio.removeEventListener('timeupdate', onTimeUpdate);
+      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
+      audio.removeEventListener('ended', onEnded);
+    };
+  }, [audioUrl]);
+
+  const togglePlay = async () => {
+    const audio = audioRef.current;
+    if (!audio || loading) return;
+    
+    try {
+      if (playing) {
+        audio.pause();
+        setPlaying(false);
+      } else {
+        await audio.play();
+        setPlaying(true);
+      }
+    } catch (err) {
+      console.error('Playback error:', err);
+      toast.error('Can\'t play audio');
+      setPlaying(false);
+    }
+  };
+
+  const handleSeek = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const time = parseFloat(e.target.value);
+    if (audioRef.current && !isNaN(time)) {
+      audioRef.current.currentTime = time;
+      setCurrentTime(time);
+    }
+  };
+
+  const formatTime = (time: number) => {
+    if (!time || isNaN(time)) return '0:00';
+    const mins = Math.floor(time / 60);
+    const secs = Math.floor(time % 60);
+    return `${mins}:${secs.toString().padStart(2, '0')}`;
   };
 
   const saveName = () => { onRename(name); setEditing(false); };
 
   return (
     <motion.div
-      initial={{ opacity: 0, y: 8 }}
-      animate={{ opacity: 1, y: 0 }}
-      className="flex items-center gap-3 p-3 rounded-2xl glass-card"
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      className="p-4 rounded-[1.5rem] glass-strong border border-white/10"
     >
-      <audio ref={audioRef} src={attachment.url} onEnded={() => setPlaying(false)} />
-      <button onClick={togglePlay}
-        className="w-10 h-10 rounded-xl glass-primary flex items-center justify-center flex-shrink-0">
-        {playing ? <Pause size={16} className="text-primary-foreground" /> : <Play size={16} className="text-primary-foreground ml-0.5" />}
-      </button>
-      <div className="flex-1 min-w-0">
-        {editing ? (
-          <div className="flex items-center gap-1">
-            <input autoFocus value={name} onChange={e => setName(e.target.value)}
-              onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false); }}
-              className="text-sm font-body font-semibold bg-transparent outline-none border-b border-primary/40 w-full" />
-            <button onClick={saveName} className="p-1 text-primary"><Check size={14} /></button>
+      <audio ref={audioRef} preload="metadata" />
+      
+      <div className="flex items-center gap-3">
+        <button 
+          onClick={togglePlay}
+          disabled={loading}
+          className="w-10 h-10 rounded-xl glass-primary flex items-center justify-center flex-shrink-0 shadow-lg active:scale-95 transition-all"
+        >
+          {loading ? (
+            <Loader2 size={16} className="animate-spin text-primary-foreground" />
+          ) : playing ? (
+            <Pause size={18} className="text-primary-foreground" />
+          ) : (
+            <Play size={18} className="text-primary-foreground ml-0.5" />
+          )}
+        </button>
+        
+        <div className="flex-1 min-w-0">
+          {editing ? (
+            <div className="flex items-center gap-1">
+              <input 
+                autoFocus 
+                value={name} 
+                onChange={e => setName(e.target.value)}
+                onBlur={saveName}
+                onKeyDown={e => { if (e.key === 'Enter') saveName(); if (e.key === 'Escape') setEditing(false); }}
+                className="text-xs font-heading font-bold bg-white/5 rounded px-2 py-1 outline-none w-full border border-primary/20" 
+              />
+            </div>
+          ) : (
+            <div className="flex items-center justify-between gap-3">
+              <p className="text-sm font-heading font-bold text-foreground truncate cursor-default">{attachment.name}</p>
+              <div className="flex items-center gap-1">
+                <button 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    setEditing(true);
+                  }} 
+                  className="p-2 text-muted-foreground/40 hover:text-primary transition-colors active:scale-90"
+                >
+                  <Pencil size={15} />
+                </button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <button 
+                      className="p-2 text-destructive hover:scale-110 transition-all active:scale-90"
+                    >
+                      <Trash2 size={15} />
+                    </button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent className="glass-strong border-white/20 rounded-[2rem] w-[90vw] max-w-sm">
+                    <AlertDialogHeader>
+                      <AlertDialogTitle className="font-heading font-bold text-lg">Remove Audio?</AlertDialogTitle>
+                      <AlertDialogDescription className="font-body text-foreground/60">
+                        This will permanently remove "{attachment.name}" from your note.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter className="flex-row gap-3 sm:space-x-0 mt-4">
+                      <AlertDialogCancel className="flex-1 rounded-2xl glass-btn border-none hover:bg-white/10 transition-colors m-0">
+                        Cancel
+                      </AlertDialogCancel>
+                      <AlertDialogAction 
+                        onClick={() => {
+                          soundEffects.play('delete');
+                          if (audioRef.current) audioRef.current.pause();
+                          onDelete();
+                          toast.info('Audio removed');
+                        }}
+                        className="flex-1 rounded-2xl glass-primary bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors m-0"
+                      >
+                        Delete
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+              </div>
+            </div>
+          )}
+          <div className="flex justify-between items-center mt-0.5">
+            <p className="text-[9px] font-bold tracking-tight text-muted-foreground/50">
+              {formatTime(currentTime)} / {formatTime(duration)}
+            </p>
           </div>
-        ) : (
-          <p className="text-sm font-body font-semibold text-foreground truncate">{attachment.name}</p>
-        )}
-        <p className="text-[10px] font-body text-muted-foreground">Audio</p>
+        </div>
       </div>
-      <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg glass-icon text-muted-foreground"><Pencil size={13} /></button>
-      <button onClick={onDelete} className="p-1.5 rounded-lg glass-icon text-muted-foreground hover:text-destructive"><Trash2 size={13} /></button>
+
+      <div className="mt-2.5">
+        <input 
+          type="range"
+          min="0"
+          max={duration || 0}
+          step="0.01"
+          value={currentTime}
+          onChange={handleSeek}
+          className="w-full h-1 rounded-full appearance-none bg-white/5 overflow-hidden cursor-pointer"
+          style={{
+            background: `linear-gradient(to right, hsl(var(--primary)) ${(currentTime / (duration || 1)) * 100}%, rgba(255,255,255,0.05) 0%)`
+          }}
+        />
+      </div>
     </motion.div>
   );
 }
@@ -101,26 +285,102 @@ function YoutubePlayer({ attachment, onRename, onDelete }: {
           )}
         </div>
         <button onClick={() => setEditing(true)} className="p-1.5 rounded-lg glass-icon text-muted-foreground"><Pencil size={13} /></button>
-        <button onClick={onDelete} className="p-1.5 rounded-lg glass-icon text-muted-foreground hover:text-destructive"><Trash2 size={13} /></button>
+        <AlertDialog>
+          <AlertDialogTrigger asChild>
+            <button 
+              className="p-1.5 rounded-lg glass-icon text-destructive hover:scale-110 transition-all active:scale-90"
+            >
+              <Trash2 size={13} />
+            </button>
+          </AlertDialogTrigger>
+          <AlertDialogContent className="glass-strong border-white/20 rounded-[2rem] w-[90vw] max-w-sm">
+            <AlertDialogHeader>
+              <AlertDialogTitle className="font-heading font-bold text-lg">Remove Video?</AlertDialogTitle>
+              <AlertDialogDescription className="font-body text-foreground/60">
+                This will remove the YouTube link from your note.
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter className="flex-row gap-3 sm:space-x-0 mt-4">
+              <AlertDialogCancel className="flex-1 rounded-2xl glass-btn border-none hover:bg-white/10 transition-colors m-0">
+                Cancel
+              </AlertDialogCancel>
+              <AlertDialogAction 
+                onClick={() => {
+                  soundEffects.play('delete');
+                  onDelete();
+                  toast.info('Video removed');
+                }}
+                className="flex-1 rounded-2xl glass-primary bg-destructive text-destructive-foreground hover:bg-destructive/90 transition-colors m-0"
+              >
+                Delete
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </div>
     </motion.div>
   );
 }
 
-export default function MediaEditor({ media, onChange }: MediaEditorProps) {
+export default function MediaEditor({ media, onChange, userId }: MediaEditorProps) {
   const [showYtInput, setShowYtInput] = useState(false);
   const [ytUrl, setYtUrl] = useState('');
+  const [uploading, setUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  const handleAudioUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  const handleAudioUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-    const reader = new FileReader();
-    reader.onload = () => {
-      onChange([...media, { id: uuidv4(), type: 'audio', name: file.name.replace(/\.[^/.]+$/, ''), url: reader.result as string }]);
-    };
-    reader.readAsDataURL(file);
-    e.target.value = '';
+
+    // Check size (e.g., 500MB limit for local DB)
+    if (file.size > 500 * 1024 * 1024) {
+      toast.error('File too large (max 500MB)');
+      return;
+    }
+
+    setUploading(true);
+    try {
+      let finalUrl = '';
+      
+      // Try Supabase Storage first if it's not too big for cloud
+      if (userId && file.size < 50 * 1024 * 1024) {
+        const fileExt = file.name.split('.').pop();
+        const fileName = `${uuidv4()}.${fileExt}`;
+        const filePath = `${userId}/${fileName}`;
+        
+        const { data, error } = await supabase.storage
+          .from('media')
+          .upload(filePath, file);
+
+        if (!error && data) {
+          const { data: { publicUrl } } = supabase.storage
+            .from('media')
+            .getPublicUrl(filePath);
+          finalUrl = publicUrl;
+        } else {
+          console.warn('Cloud upload failed/skipped, using local DB:', error);
+        }
+      }
+
+      // Fallback to local IndexedDB (much better than base64 for large files)
+      if (!finalUrl) {
+        finalUrl = await saveLocalMedia(file, file.name);
+      }
+
+      onChange([...media, { 
+        id: uuidv4(), 
+        type: 'audio', 
+        name: file.name.replace(/\.[^/.]+$/, ''), 
+        url: finalUrl 
+      }]);
+      toast.success('Audio saved locally');
+    } catch (err: any) {
+      console.error('Upload error:', err);
+      toast.error('Failed to save audio');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
   };
 
   const addYoutube = () => {
@@ -151,9 +411,12 @@ export default function MediaEditor({ media, onChange }: MediaEditorProps) {
 
       <div className="flex gap-2">
         <input ref={fileInputRef} type="file" accept="audio/*" className="hidden" onChange={handleAudioUpload} />
-        <button onClick={() => fileInputRef.current?.click()}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-body font-semibold glass-btn text-foreground">
-          <Upload size={15} /> Audio
+        <button 
+          onClick={() => fileInputRef.current?.click()}
+          disabled={uploading}
+          className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-body font-semibold glass-btn text-foreground disabled:opacity-50"
+        >
+          {uploading ? <Loader2 size={15} className="animate-spin" /> : <Upload size={15} />} Audio
         </button>
         <button onClick={() => setShowYtInput(!showYtInput)}
           className="flex items-center gap-2 px-4 py-2.5 rounded-xl text-sm font-body font-semibold glass-btn text-foreground">

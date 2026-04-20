@@ -3,7 +3,9 @@ export type NoteColor = 'yellow' | 'pink' | 'blue' | 'green' | 'purple' | 'orang
 export interface ChecklistItem {
   id: string;
   text: string;
+  description?: string;
   checked: boolean;
+  reminder?: NoteReminder;
 }
 
 export interface MindMapNode {
@@ -41,6 +43,7 @@ export interface Note {
   reminder?: NoteReminder;
   pinned: boolean;
   category: string;
+  isDeleted?: boolean;
   createdAt: string;
   updatedAt: string;
 }

@@ -1,0 +1,2 @@
+// This file is managed by the system to hold the logo content.
+// The actual image is copied via shell commands.

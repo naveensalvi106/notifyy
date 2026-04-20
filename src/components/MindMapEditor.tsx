@@ -34,10 +34,11 @@ function NodeItem({ node, depth, index, onUpdate, onDelete, isRoot }: NodeItemPr
   const [editingDesc, setEditingDesc] = useState(false);
   const [showDesc, setShowDesc] = useState(!!node.description);
   const color = node.color || getColor(depth, index);
-  const hasChildren = node.children.length > 0;
+  const children = node.children || [];
+  const hasChildren = children.length > 0;
 
   const addChild = () => {
-    const childColor = getColor(depth + 1, node.children.length);
+    const childColor = getColor(depth + 1, children.length);
     const newChild: MindMapNode = {
       id: uuidv4(),
       text: '',
@@ -46,15 +47,15 @@ function NodeItem({ node, depth, index, onUpdate, onDelete, isRoot }: NodeItemPr
       collapsed: false,
       color: childColor,
     };
-    onUpdate({ ...node, children: [...node.children, newChild], collapsed: false });
+    onUpdate({ ...node, children: [...children, newChild], collapsed: false });
   };
 
   const updateChild = (childId: string, updated: MindMapNode) => {
-    onUpdate({ ...node, children: node.children.map(c => c.id === childId ? updated : c) });
+    onUpdate({ ...node, children: children.map(c => c.id === childId ? updated : c) });
   };
 
   const deleteChild = (childId: string) => {
-    onUpdate({ ...node, children: node.children.filter(c => c.id !== childId) });
+    onUpdate({ ...node, children: children.filter(c => c.id !== childId) });
   };
 
   const toggleCollapse = () => {
@@ -188,7 +189,7 @@ function NodeItem({ node, depth, index, onUpdate, onDelete, isRoot }: NodeItemPr
                 className="ml-4 mt-0.5 border-l-2 pl-0 space-y-0.5 overflow-hidden"
                 style={{ borderColor: `${color}30` }}
               >
-                {node.children.map((child, ci) => (
+                {children.map((child, ci) => (
                   <NodeItem
                     key={child.id}
                     node={child}
@@ -216,9 +217,10 @@ interface MindMapEditorProps {
 export default function MindMapEditor({ nodes, onChange }: MindMapEditorProps) {
   // We store the tree as a single root node array
   // Each node in the array is a root-level branch
+  const safeNodes = nodes || [];
 
   const addRootNode = () => {
-    const color = getColor(0, nodes.length);
+    const color = getColor(0, safeNodes.length);
     const newNode: MindMapNode = {
       id: uuidv4(),
       text: '',
@@ -227,18 +229,18 @@ export default function MindMapEditor({ nodes, onChange }: MindMapEditorProps) {
       collapsed: false,
       color,
     };
-    onChange([...nodes, newNode]);
+    onChange([...safeNodes, newNode]);
   };
 
   const updateNode = (id: string, updated: MindMapNode) => {
-    onChange(nodes.map(n => n.id === id ? updated : n));
+    onChange(safeNodes.map(n => n.id === id ? updated : n));
   };
 
   const deleteNode = (id: string) => {
-    onChange(nodes.filter(n => n.id !== id));
+    onChange(safeNodes.filter(n => n.id !== id));
   };
 
-  if (nodes.length === 0) {
+  if (safeNodes.length === 0) {
     return (
       <div className="space-y-3">
         <h4 className="font-heading font-bold text-sm text-foreground flex items-center gap-2">
@@ -269,7 +271,7 @@ export default function MindMapEditor({ nodes, onChange }: MindMapEditorProps) {
       </div>
 
       <div className="space-y-1 rounded-2xl border border-border bg-card/50 p-3 overflow-x-auto">
-        {nodes.map((node, i) => (
+        {safeNodes.map((node, i) => (
           <NodeItem
             key={node.id}
             node={node}

@@ -28,10 +28,17 @@ interface NoteCardProps {
 }
 
 export default function NoteCard({ note, onClick, onPin, index, isDragging = false, isDropTarget = false, onDragStart, onDragOver, onDrop, onDragEnd }: NoteCardProps) {
-  const checkedCount = note.checklist.filter(c => c.checked).length;
-  const preview = note.content.slice(0, 120);
-  const audioCount = (note.media || []).filter(m => m.type === 'audio').length;
-  const videoCount = (note.media || []).filter(m => m.type === 'youtube').length;
+  const checklist = Array.isArray(note.checklist) ? note.checklist : [];
+  const mindmap = Array.isArray(note.mindmap) ? note.mindmap : [];
+  const media = Array.isArray(note.media) ? note.media : [];
+  
+  const checkedCount = checklist.filter(c => c.checked).length;
+  const preview = (note.content || '').slice(0, 120);
+  const audioCount = media.filter(m => m.type === 'audio').length;
+  const videoCount = media.filter(m => m.type === 'youtube').length;
+
+  const color = note.color || 'yellow';
+  const updatedAt = note.updatedAt || new Date().toISOString();
 
   return (
     <div
@@ -46,7 +53,7 @@ export default function NoteCard({ note, onClick, onPin, index, isDragging = fal
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: index * 0.04, duration: 0.3 }}
-        className={`${colorClasses[note.color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group ${isDragging ? 'opacity-55 scale-[0.98]' : ''} ${isDropTarget ? 'ring-2 ring-primary/40 shadow-[0_0_0_1px_hsl(var(--primary)/0.15)]' : ''}`}
+        className={`${colorClasses[color]} rounded-2xl p-4 cursor-grab active:cursor-grabbing glass-card transition-all hover:scale-[1.02] relative group ${isDragging ? 'opacity-55 scale-[0.98]' : ''} ${isDropTarget ? 'ring-2 ring-primary/40 shadow-[0_0_0_1px_hsl(var(--primary)/0.15)]' : ''}`}
         onClick={onClick}
       >
       {/* Drag handle */}
@@ -62,7 +69,7 @@ export default function NoteCard({ note, onClick, onPin, index, isDragging = fal
       </button>
 
       <p className="text-xs text-foreground/50 font-body mb-1">
-        {format(new Date(note.updatedAt), 'dd.MM, h:mma')}
+        {format(new Date(updatedAt), 'dd.MM, h:mma')}
       </p>
 
       {note.title && (
@@ -73,9 +80,9 @@ export default function NoteCard({ note, onClick, onPin, index, isDragging = fal
         <p className="text-sm text-foreground/60 font-body line-clamp-3 mb-2 italic">{preview}</p>
       )}
 
-      {note.checklist.length > 0 && (
+      {checklist.length > 0 && (
         <div className="space-y-1.5 mb-2">
-          {note.checklist.slice(0, 3).map(item => (
+          {checklist.slice(0, 3).map(item => (
             <div key={item.id} className="flex items-center gap-2 text-sm">
               <span className={`w-4 h-4 rounded-md flex-shrink-0 flex items-center justify-center text-[10px] ${item.checked ? 'glass-checkbox-checked text-primary-foreground' : 'glass-icon'}`}>
                 {item.checked && '✓'}
@@ -83,17 +90,17 @@ export default function NoteCard({ note, onClick, onPin, index, isDragging = fal
               <span className={`truncate ${item.checked ? 'line-through text-foreground/35' : 'text-foreground/70'}`}>{item.text}</span>
             </div>
           ))}
-          {note.checklist.length > 3 && <p className="text-xs text-foreground/40">+{note.checklist.length - 3} more</p>}
+          {checklist.length > 3 && <p className="text-xs text-foreground/40">+{checklist.length - 3} more</p>}
         </div>
       )}
 
       <div className="flex items-center gap-1.5 mt-2 flex-wrap">
-        {note.checklist.length > 0 && (
+        {checklist.length > 0 && (
           <span className="flex items-center gap-1 text-[11px] text-foreground/50 px-2 py-0.5 rounded-lg glass-badge">
-            <CheckSquare size={10} /> {checkedCount}/{note.checklist.length}
+            <CheckSquare size={10} /> {checkedCount}/{checklist.length}
           </span>
         )}
-        {note.mindmap.length > 0 && (
+        {mindmap.length > 0 && (
           <span className="flex items-center gap-1 text-[11px] text-foreground/50 px-2 py-0.5 rounded-lg glass-badge">
             <GitBranch size={10} /> Map
           </span>
