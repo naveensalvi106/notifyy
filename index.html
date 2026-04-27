@@ -3,29 +3,35 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <!-- TODO: Set the document title to the name of your application -->
     <title>Notify | Premium Cloud-Synced Notes</title>
     <meta name="description" content="Manage your notes, checklists, and reminders with premium cloud synchronization and beautiful themes." />
     <meta name="author" content="Naveen Salvi" />
 
-    <link rel="icon" type="image/x-icon" href="./favicon.ico?v=2" />
-    <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2" />
-    <link rel="manifest" href="./manifest.json" />
+    <link rel="icon" type="image/x-icon" href="favicon.ico?v=2" />
+    <link rel="apple-touch-icon" href="apple-touch-icon.png?v=2" />
+    <link rel="manifest" href="manifest.json" />
     <meta property="og:title" content="Notify App" />
     <meta property="og:description" content="Beautiful, cloud-synced notes for all your devices." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="/favicon.ico" />
+    <meta property="og:image" content="favicon.ico" />
 
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Notify | Premium Notes" />
     <meta name="twitter:description" content="The ultimate space for your thoughts and checklists." />
-    <script type="module" crossorigin src="./assets/index-DUaFSYdI.js"></script>
-    <link rel="modulepreload" crossorigin href="./assets/vendor-Cg9mZ4Gw.js">
-    <link rel="modulepreload" crossorigin href="./assets/ui-DQHYGq8v.js">
-    <link rel="stylesheet" crossorigin href="./assets/index-B04TtfAU.css">
+    <script type="module" crossorigin src="./assets/index-DC-l4RUn.js"></script>
+    <link rel="modulepreload" crossorigin href="./assets/vendor-aQaxJM78.js">
+    <link rel="modulepreload" crossorigin href="./assets/ui-CKFNvnVy.js">
+    <link rel="stylesheet" crossorigin href="./assets/index-CQHnL6rQ.css">
   </head>
 
-  <body>
-    <div id="root"></div>
+  <body style="background: #0a0a0b; margin: 0; padding: 0;">
+    <div id="root">
+      <!-- Fallback loader in case JS fails -->
+      <div id="fallback-loader" style="height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: center; color: #71717a; font-family: sans-serif;">
+        <div style="width: 40px; height: 40px; border: 3px solid #3f3f46; border-top-color: #8b5cf6; border-radius: 50%; animation: spin 1s linear infinite;"></div>
+        <p style="margin-top: 16px; font-weight: bold; letter-spacing: 0.1em; color: #ffffff;">STARTING NOTIFY...</p>
+        <style>@keyframes spin { to { transform: rotate(360deg); } }</style>
+      </div>
+    </div>
   </body>
 </html>
