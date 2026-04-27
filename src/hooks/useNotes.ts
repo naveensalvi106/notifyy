@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { Note, NoteColor } from '@/types/note';
 import { v4 as uuidv4 } from 'uuid';
-import { updateWidget, scheduleReminder, cancelReminder, rescheduleAllReminders } from '@/lib/native';
+import { scheduleReminder, cancelReminder, rescheduleAllReminders } from '@/lib/native';
 import { supabase } from '@/integrations/supabase/client';
 import { deleteLocalMedia } from '@/lib/db';
 
@@ -37,17 +37,41 @@ export function useNotes() {
   const [loading, setLoading] = useState(true);
   const [categories, setCategories] = useState<string[]>([]);
   const [syncStatus, setSyncStatus] = useState<'idle' | 'syncing' | 'error' | 'success'>('idle');
-  const [userId, setUserId] = useState<string | null>(null);
+  const [userId, setUserId] = useState<string | null>(() => localStorage.getItem('notify_last_user_id'));
   
   useEffect(() => {
     const init = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      setUserId(session?.user?.id || null);
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+        const currentId = session?.user?.id;
+        
+        if (currentId) {
+          setUserId(currentId);
+          localStorage.setItem('notify_last_user_id', currentId);
+        } else {
+          // If no supabase session, fallback to what's already in state/localStorage (like a sync token)
+          const storedId = localStorage.getItem('notify_last_user_id');
+          if (storedId) setUserId(storedId);
+        }
+      } catch (err) {
+        console.warn('Auth check failed (likely offline):', err);
+      } finally {
+        setLoading(false);
+      }
     };
     init();
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUserId(session?.user?.id || null);
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state changed:', event, session?.user?.id);
+      
+      if (session?.user?.id) {
+        setUserId(session.user.id);
+        localStorage.setItem('notify_last_user_id', session.user.id);
+      } else if (event === 'SIGNED_OUT') {
+        // Only clear if explicitly signed out
+        setUserId(null);
+        localStorage.removeItem('notify_last_user_id');
+      }
     });
 
     return () => subscription.unsubscribe();
@@ -486,7 +510,7 @@ export function useNotes() {
         if (ai !== -1 && bi !== -1) return ai - bi;
         return new Date(b.updatedAt).getTime() - new Date(a.updatedAt).getTime();
       }).slice(0, 5);
-      updateWidget(notes.length, top.map(n => n.title || "Untitled"));
+
     }
   }, [notes, order]);
 

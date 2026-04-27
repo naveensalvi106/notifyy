@@ -24,6 +24,7 @@ export default function App() {
   useEffect(() => {
     // 0. Request Notifications Permission instantly
     const requestPerms = async () => {
+      if (!isNative) return;
       try {
         const status = await LocalNotifications.checkPermissions();
         if (status.display !== 'granted') {
@@ -37,88 +38,98 @@ export default function App() {
 
     // 1. Check session
     const initAuth = async () => {
+      console.log("Checking auth session...");
       try {
-        const { data: { session: currentSession } } = await supabase.auth.getSession();
-        setSession(currentSession);
+        const { data: { session: currentSession }, error } = await supabase.auth.getSession();
+        if (error) throw error;
+        if (currentSession) {
+          setSession(currentSession);
+          console.log("Auth session established:", currentSession.user.id);
+        }
       } catch (err) {
-        console.error("Auth init failed:", err);
+        console.warn("Auth initialization failed:", err);
       } finally {
         setLoading(false);
       }
     };
     initAuth();
 
-    // Safety timeout to prevent permanent black screen
-    const safetyTimeout = setTimeout(() => {
-      setLoading(false);
-    }, 5000);
-
     // 2. Auth listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      console.log("Auth state change:", _event, session?.user?.id || 'none');
       setSession(session);
       setLoading(false);
+      if (session) {
+        localStorage.setItem('notify_last_user_id', session.user.id);
+      }
     });
 
     // 3. Capacitor Deep link listener
-    const urlListener = CapacitorApp.addListener('appUrlOpen', (event) => {
-      handleUrl(event.url);
-    });
+    let urlListener: any = null;
+    if (isNative) {
+      urlListener = CapacitorApp.addListener('appUrlOpen', (event) => {
+        handleUrl(event.url);
+      });
+    }
+
+    // 4. Electron Deep link listener (IPC bridge)
+    if (window.electron && window.electron.onAppUrlOpen) {
+      window.electron.onAppUrlOpen((url: string) => {
+        console.log('Electron deep link:', url);
+        handleUrl(url);
+      });
+    }
 
     return () => {
       subscription.unsubscribe();
-      urlListener.then(l => l.remove());
-      clearTimeout(safetyTimeout);
+      if (urlListener) urlListener.then((l: any) => l.remove());
     };
   }, []);
 
   const handleUrl = async (urlStr: string) => {
-    console.log('Mobile redirect:', urlStr);
+    console.log('Sync processing:', urlStr);
     try {
-      const url = new URL(urlStr.replace('com.notify.app://', 'https://notify.app/'));
-      
-      // Try hash first (Supabase default)
-      let hash = url.hash.substring(1);
-      if (!hash && url.search) {
-        // Fallback to query params
-        hash = url.search.substring(1);
-      }
-      
-      if (!hash) return;
+      let accessToken: string | null = null;
+      let refreshToken: string | null = null;
 
-      const params = new URLSearchParams(hash);
-      const accessToken = params.get('access_token');
-      const refreshToken = params.get('refresh_token');
+      if (urlStr.includes('NOTIFY_SYNC:')) {
+        const parts = urlStr.split(':');
+        if (parts.length >= 3) {
+          accessToken = parts[1];
+          refreshToken = parts[2];
+        }
+      }
 
       if (accessToken && refreshToken) {
         setLoading(true);
-        toast.info("Connecting your account...");
         const { error } = await supabase.auth.setSession({
           access_token: accessToken,
           refresh_token: refreshToken,
         });
 
         if (error) {
-          console.error('Session error:', error);
-          toast.error("Sync failed: " + error.message);
+          toast.error("Handshake failed: " + error.message);
         } else {
-          toast.success("Sync complete!");
-          // Force a small delay to ensure session is stored
-          setTimeout(() => window.location.href = '#/dashboard', 500);
+          toast.success("Identity Verified!");
         }
+        setLoading(false);
       }
     } catch (err) {
       console.error('Deep link error:', err);
-    } finally {
       setLoading(false);
     }
   };
+
+  const storedId = localStorage.getItem('notify_last_user_id');
+  const effectiveUserId = session?.user?.id || storedId;
+  const isLoggedIn = !!effectiveUserId;
 
   if (loading) {
     return (
       <div className="min-h-screen bg-[#0a0a0b] flex items-center justify-center">
         <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-purple-500/20 border-t-purple-500 rounded-full animate-spin" />
-          <p className="text-zinc-500 text-sm animate-pulse">Initializing Notify...</p>
+          <div className="w-12 h-12 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
+          <p className="text-zinc-500 text-sm animate-pulse font-medium">Restoring Session...</p>
         </div>
       </div>
     );
@@ -132,15 +143,24 @@ export default function App() {
           <Sonner position="top-center" />
           <Routes>
             <Route path="/" element={
-              session ? <Navigate to="/dashboard" /> : 
-              (isNative ? <Navigate to="/login" /> : <NeoHome />)
+              isLoggedIn ? <Navigate to="/dashboard" /> : <Navigate to="/login" />
             } />
             <Route path="/dashboard" element={
-              session ? <Index userName={session.user.user_metadata.full_name || 'User'} userEmail={session.user.email} userId={session.user.id} onLogout={() => supabase.auth.signOut()} /> : <Navigate to="/login" />
+              isLoggedIn ? (
+                <Index 
+                  userName={session?.user?.user_metadata?.full_name || (session?.user?.email) || 'Standard User'} 
+                  userEmail={session?.user?.email} 
+                  userId={effectiveUserId} 
+                  onLogout={async () => {
+                    await supabase.auth.signOut();
+                    localStorage.removeItem('notify_last_user_id');
+                    setSession(null);
+                  }} 
+                />
+              ) : <Navigate to="/login" />
             } />
-            <Route path="/login" element={!session ? <Login /> : <Navigate to="/dashboard" />} />
-            <Route path="/home" element={<NeoHome />} />
-            <Route path="*" element={<NotFound />} />
+            <Route path="/login" element={!isLoggedIn ? <Login /> : <Navigate to="/dashboard" />} />
+            <Route path="*" element={<Navigate to="/" />} />
           </Routes>
         </HashRouter>
       </TooltipProvider>

@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
+import { AIChat } from '@/components/AIChat';
 import { useNotes } from '@/hooks/useNotes';
 import { Note, NoteColor } from '@/types/note';
 import NoteCard from '@/components/NoteCard';
@@ -50,6 +51,8 @@ export default function Index({ userName, userEmail, onLogout, userId }: IndexPr
   const [editCatName, setEditCatName] = useState('');
   const [dragOverId, setDragOverId] = useState<string | null>(null);
   const [dragId, setDragId] = useState<string | null>(null);
+  const [isExportingAI, setIsExportingAI] = useState(false);
+  const [isAIChatOpen, setIsAIChatOpen] = useState(false);
   const importInputRef = useRef<HTMLInputElement>(null);
 
   const allCategories = ['All', ...(customCategories || [])];
@@ -113,6 +116,73 @@ export default function Index({ userName, userEmail, onLogout, userId }: IndexPr
   const handleDragEnd = () => {
     setDragId(null);
     setDragOverId(null);
+  };
+
+  const generateAIMemory = () => {
+    const header = `--- NOTIFY AI MEMORY CAPSULE ---\nGenerated: ${new Date().toLocaleString()}\nOwner: ${userName}\nDescription: This file contains my structured personal notes and context for AI analysis.\n--------------------------------\n\n`;
+    
+    const content = notes.map(note => {
+      let noteTxt = `## ${note.title || 'Untitled Note'}\n`;
+      if (note.category) noteTxt += `📂 Category: ${note.category}\n`;
+      noteTxt += `📅 Updated: ${new Date(note.updatedAt).toLocaleDateString()}\n\n`;
+      
+      if (note.content) {
+        noteTxt += `### Content\n${note.content}\n\n`;
+      }
+      
+      if (note.checklist && note.checklist.length > 0) {
+        noteTxt += `### Checklist Tasks\n`;
+        note.checklist.forEach(item => {
+          noteTxt += `${item.checked ? '✅' : '⭕'} ${item.text}${item.description ? ` (${item.description})` : ''}\n`;
+        });
+        noteTxt += `\n`;
+      }
+      
+      if (note.mindmap && note.mindmap.length > 0) {
+        noteTxt += `### Structured Ideas (Mindmap)\n`;
+        const flattenNodes = (nodes: any[], depth = 0) => {
+          nodes.forEach(node => {
+            noteTxt += `${'  '.repeat(depth)}‣ ${node.text}${node.description ? `: ${node.description}` : ''}\n`;
+            if (node.children?.length > 0) flattenNodes(node.children, depth + 1);
+          });
+        };
+        flattenNodes(note.mindmap);
+        noteTxt += `\n`;
+      }
+      return noteTxt;
+    }).join('\n---\n\n');
+    
+    return header + content;
+  };
+
+  const handleAIMemoryExport = async () => {
+    setIsExportingAI(true);
+    soundEffects.play('chime');
+    try {
+      const memory = generateAIMemory();
+      
+      // 1. Copy to clipboard
+      await navigator.clipboard.writeText(memory);
+      
+      // 2. Download file
+      const blob = new Blob([memory], { type: 'text/markdown' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `Notify_Brain_Dump.md`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      URL.revokeObjectURL(url);
+      
+      toast.success("AI Brain Copied & Downloaded!", {
+        description: "Paste it in ChatGPT or upload the .md file."
+      });
+    } catch (err) {
+      toast.error("Export failed");
+    } finally {
+      setIsExportingAI(false);
+    }
   };
 
   if (loading && notes.length === 0) {
@@ -331,6 +401,50 @@ export default function Index({ userName, userEmail, onLogout, userId }: IndexPr
 
               <div className="w-full mb-6">
                 <button 
+                  onClick={handleAIMemoryExport}
+                  disabled={isExportingAI}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl glass-badge border-blue-500/20 bg-blue-500/5 transition-all active:scale-[0.98] hover:bg-blue-500/10 group"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-blue-500/20 text-blue-400 group-hover:scale-110 transition-transform">
+                      <Globe size={18} />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-blue-400">Sync with AI</p>
+                      <p className="text-[9px] font-medium text-muted-foreground/80">Export Brain Dump for ChatGPT</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-blue-400/50">
+                    <Download size={14} />
+                  </div>
+                </button>
+              </div>
+
+              <div className="w-full mb-3">
+                <button 
+                  onClick={() => {
+                    setShowUserInfo(false);
+                    setIsAIChatOpen(true);
+                  }}
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl border border-indigo-500/20 bg-indigo-500/5 transition-all active:scale-[0.98] hover:bg-indigo-500/10 group shadow-[0_0_15px_rgba(99,102,241,0.1)]"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="p-2 rounded-xl bg-indigo-500/20 text-indigo-400 group-hover:scale-110 transition-transform shadow-[0_0_10px_rgba(99,102,241,0.2)]">
+                      <Sparkles size={18} fill="currentColor" />
+                    </div>
+                    <div className="text-left">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-indigo-400">Consult Assistant</p>
+                      <p className="text-[9px] font-medium text-muted-foreground/80">Live chat with your notes</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-indigo-400/50">
+                    <ChevronRight size={14} />
+                  </div>
+                </button>
+              </div>
+
+              <div className="w-full mb-3">
+                <button 
                   onClick={async () => {
                     soundEffects.play('tap');
                     toast.info("Sending test notification in 2 seconds...");
@@ -339,15 +453,15 @@ export default function Index({ userName, userEmail, onLogout, userId }: IndexPr
                       await scheduleNotification("Test Notification", "If you see this, notifications are working perfectly! 🎉");
                     }, 2000);
                   }}
-                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl glass-badge border-white/10 transition-all active:scale-[0.98] hover:bg-white/5"
+                  className="w-full flex items-center justify-between px-5 py-4 rounded-2xl glass-badge border-white/10 transition-all active:scale-[0.98] hover:bg-white/5 opacity-60"
                 >
                   <div className="flex items-center gap-3">
-                    <div className="p-2 rounded-xl bg-orange-500/20 text-orange-400">
+                    <div className="p-2 rounded-xl bg-white/10 text-muted-foreground">
                       <Bell size={18} />
                     </div>
                     <div className="text-left">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/80">Test System</p>
-                      <p className="text-[9px] font-medium text-muted-foreground">Verify notifications are working</p>
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-foreground/80">Diagnostic Test</p>
+                      <p className="text-[9px] font-medium text-muted-foreground">Verify push notifications</p>
                     </div>
                   </div>
                 </button>

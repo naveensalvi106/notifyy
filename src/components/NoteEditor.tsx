@@ -1,15 +1,13 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Note, NoteColor } from '@/types/note';
-import { ArrowLeft, Trash2, MoreVertical, FileText, CheckSquare, GitBranch, Image, Pin } from 'lucide-react';
+import { ArrowLeft, Trash2, MoreVertical, FileText, CheckSquare, GitBranch, Image, Pin, GripVertical } from 'lucide-react';
 import ChecklistEditor from './ChecklistEditor';
 import MindMapEditor from './MindMapEditor';
 import ReminderEditor from './ReminderEditor';
-import WidgetPreview from './WidgetPreview';
 import ColorPicker from './ColorPicker';
 import MediaEditor from './MediaEditor';
-import { motion } from 'framer-motion';
+import { motion, Reorder } from 'framer-motion';
 import { soundEffects } from '@/lib/sounds';
-import { toast } from '@/hooks/use-toast';
 
 const bgClasses: Record<string, string> = {
   yellow: 'note-card-yellow',
@@ -30,50 +28,123 @@ interface NoteEditorProps {
   userId: string | null;
 }
 
-const tabs = [
-  { key: 'note' as const, label: 'Note', icon: FileText },
-  { key: 'checklist' as const, label: 'Checklist', icon: CheckSquare },
-  { key: 'mindmap' as const, label: 'Mind Map', icon: GitBranch },
-  { key: 'media' as const, label: 'Media', icon: Image },
-];
+const DEFAULT_ORDER = ['note', 'checklist', 'mindmap', 'media'];
 
 export default function NoteEditor({ note, onUpdate, onDelete, onBack, categories = [], userId }: NoteEditorProps) {
   const [showMore, setShowMore] = useState(false);
-  const [activeTab, setActiveTab] = useState<'note' | 'checklist' | 'mindmap' | 'media'>('note');
+  const [sections, setSections] = useState<string[]>(note.sectionOrder || DEFAULT_ORDER);
 
-  const handleAddWidget = () => {
-    toast({
-      title: "Widget Ready!",
-      description: `"${note.title || 'Untitled'}" widget is ready for your home screen.`,
-    });
-  };
+  useEffect(() => {
+    if (note.sectionOrder) {
+      setSections(note.sectionOrder);
+    } else {
+      setSections(DEFAULT_ORDER);
+    }
+  }, [note.sectionOrder]);
 
   if (!note) return null;
+
+  const handleReorder = (newOrder: string[]) => {
+    setSections(newOrder);
+    onUpdate(note.id, { sectionOrder: newOrder });
+  };
+
+  const renderSection = (key: string) => {
+    switch (key) {
+      case 'note':
+        return (
+          <div className="space-y-3 bg-black/5 p-5 rounded-3xl border border-white/5 shadow-inner">
+            <div className="flex items-center justify-between mb-1 opacity-50">
+              <div className="flex items-center gap-2">
+                <FileText size={16} className="text-foreground/60" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/60">Note Content</span>
+              </div>
+              <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-foreground/40 hover:text-foreground transition-colors">
+                <GripVertical size={20} />
+              </div>
+            </div>
+            <textarea
+              value={note.content || ''}
+              onChange={e => onUpdate(note.id, { content: e.target.value })}
+              placeholder="Start writing..."
+              className="w-full min-h-[160px] text-lg font-body bg-transparent outline-none resize-none placeholder:text-foreground/10 leading-relaxed text-foreground"
+            />
+          </div>
+        );
+      case 'checklist':
+        return (
+          <div className="space-y-3 bg-black/5 p-5 rounded-3xl border border-white/5 shadow-inner">
+             <div className="flex items-center justify-between mb-1 opacity-50">
+              <div className="flex items-center gap-2">
+                <CheckSquare size={16} className="text-foreground/60" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/60">Checklist</span>
+              </div>
+              <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-foreground/40 hover:text-foreground transition-colors">
+                <GripVertical size={20} />
+              </div>
+            </div>
+            <ChecklistEditor items={note.checklist || []} onChange={checklist => onUpdate(note.id, { checklist })} />
+          </div>
+        );
+      case 'mindmap':
+        return (
+          <div className="space-y-3 bg-black/5 p-5 rounded-3xl border border-white/5 shadow-inner">
+            <div className="flex items-center justify-between mb-1 opacity-50">
+              <div className="flex items-center gap-2">
+                <GitBranch size={16} className="text-foreground/60" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/60">Mind Map</span>
+              </div>
+              <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-foreground/40 hover:text-foreground transition-colors">
+                <GripVertical size={20} />
+              </div>
+            </div>
+            <MindMapEditor nodes={note.mindmap || []} onChange={mindmap => onUpdate(note.id, { mindmap })} />
+          </div>
+        );
+      case 'media':
+        return (
+          <div className="space-y-3 bg-black/5 p-5 rounded-3xl border border-white/5 shadow-inner">
+            <div className="flex items-center justify-between mb-1 opacity-50">
+              <div className="flex items-center gap-2">
+                <Image size={16} className="text-foreground/60" />
+                <span className="text-[10px] font-black uppercase tracking-[0.2em] text-foreground/60">Media Attachments</span>
+              </div>
+              <div className="p-2 -mr-2 cursor-grab active:cursor-grabbing text-foreground/40 hover:text-foreground transition-colors">
+                <GripVertical size={20} />
+              </div>
+            </div>
+            <MediaEditor media={note.media || []} onChange={media => onUpdate(note.id, { media })} userId={userId} />
+          </div>
+        );
+      default:
+        return null;
+    }
+  };
 
   return (
     <motion.div
       initial={{ x: 20, opacity: 0 }}
       animate={{ x: 0, opacity: 1 }}
-      className={`min-h-screen ${bgClasses[note.color || 'yellow']}`}
+      className={`min-h-screen pb-32 transition-colors duration-500 ${bgClasses[note.color || 'yellow']}`}
     >
       {/* Header */}
-      <div className="sticky top-0 z-10 backdrop-blur-xl" style={{ background: 'hsl(0 0% 100% / 0.15)' }}>
-        <div className="flex items-center justify-between p-4">
+      <div className="sticky top-0 z-20 backdrop-blur-3xl border-b border-white/5" style={{ background: 'hsl(0 0% 100% / 0.08)' }}>
+        <div className="flex items-center justify-between p-4 max-w-4xl mx-auto">
           <button onClick={() => {
             soundEffects.play('swoosh');
             onBack();
-          }} className="p-2.5 -ml-2 rounded-xl glass-icon">
-            <ArrowLeft size={18} className="text-foreground" />
+          }} className="p-3 -ml-2 rounded-2xl glass-icon hover:bg-white/10 transition-colors">
+            <ArrowLeft size={20} className="text-foreground" />
           </button>
-          <div className="flex gap-2">
+          <div className="flex gap-3">
             <button onClick={() => {
               soundEffects.play('chime');
               onUpdate(note.id, { pinned: !note.pinned });
-            }} className={`p-2.5 rounded-xl glass-icon ${note.pinned ? 'text-primary' : 'text-foreground'}`}>
-              <Pin size={18} fill={note.pinned ? "currentColor" : "none"} />
+            }} className={`p-3 rounded-2xl glass-icon transition-all ${note.pinned ? 'text-primary scale-110' : 'text-foreground hover:bg-white/10'}`}>
+              <Pin size={20} fill={note.pinned ? "currentColor" : "none"} />
             </button>
-            <button onClick={() => setShowMore(!showMore)} className="p-2.5 rounded-xl glass-icon">
-              <MoreVertical size={18} className="text-foreground" />
+            <button onClick={() => setShowMore(!showMore)} className={`p-3 rounded-2xl glass-icon transition-all ${showMore ? 'bg-white/10 rotate-90' : 'hover:bg-white/10'}`}>
+              <MoreVertical size={20} className="text-foreground" />
             </button>
           </div>
         </div>
@@ -82,92 +153,79 @@ export default function NoteEditor({ note, onUpdate, onDelete, onBack, categorie
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
-            className="px-4 pb-3 space-y-3 overflow-hidden"
+            className="px-4 pb-6 space-y-5 overflow-hidden max-w-4xl mx-auto"
           >
-            <ColorPicker selected={note.color || 'yellow'} onChange={(color) => onUpdate(note.id, { color })} />
+            <div className="p-5 bg-white/5 rounded-3xl border border-white/10 backdrop-blur-md shadow-xl">
+              <p className="text-[10px] font-black uppercase tracking-[0.3em] mb-4 text-foreground/40 text-center">Customize Appearance</p>
+              <ColorPicker selected={note.color || 'yellow'} onChange={(color) => onUpdate(note.id, { color })} />
+            </div>
+            
             <div className="flex items-center gap-3">
-              <select
-                value={note.category || 'All'}
-                onChange={e => onUpdate(note.id, { category: e.target.value })}
-                className="text-sm font-body rounded-xl px-3 py-2 outline-none appearance-none cursor-pointer glass-btn"
-              >
-                <option value="All">No category</option>
-                {categories.map(c => <option key={c} value={c}>{c}</option>)}
-              </select>
+              <div className="flex-1 relative">
+                <select
+                  value={note.category || 'All'}
+                  onChange={e => onUpdate(note.id, { category: e.target.value })}
+                  className="w-full text-sm font-body font-black rounded-2xl px-5 py-4 outline-none appearance-none cursor-pointer glass-btn text-foreground pr-10 border border-white/10"
+                >
+                  <option value="All">Uncategorized</option>
+                  {categories.map(c => <option key={c} value={c}>{c}</option>)}
+                </select>
+                <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none opacity-40">
+                  <MoreVertical size={14} />
+                </div>
+              </div>
               <button
                 onClick={() => { 
                   soundEffects.play('delete');
                   onDelete(note.id); 
                   onBack(); 
                 }}
-                className="flex items-center gap-1.5 text-destructive text-sm font-body font-semibold glass-btn px-3 py-2 rounded-xl"
+                className="flex items-center gap-2 text-destructive text-sm font-body font-black glass-btn px-6 py-4 rounded-2xl border border-destructive/30 hover:bg-destructive/10 transition-colors"
               >
-                <Trash2 size={14} /> Delete
+                <Trash2 size={18} />
               </button>
             </div>
           </motion.div>
         )}
-
-        {/* Tabs */}
-        <div className="flex gap-1.5 px-4 pb-3 overflow-x-auto no-scrollbar">
-          {tabs.map(tab => {
-            const Icon = tab.icon;
-            const isActive = activeTab === tab.key;
-            return (
-              <button
-                key={tab.key}
-                onClick={() => {
-                  soundEffects.play('tap');
-                  setActiveTab(tab.key);
-                }}
-                className={`flex items-center gap-1.5 px-4 py-2 rounded-xl text-sm font-body font-bold whitespace-nowrap transition-all ${
-                  isActive ? 'glass-tab-active text-primary-foreground' : 'glass-btn text-foreground/55'
-                }`}
-              >
-                <Icon size={14} /> {tab.label}
-              </button>
-            );
-          })}
-        </div>
       </div>
 
       {/* Content */}
-      <div className="px-4 pb-6 space-y-4">
-        <input
-          value={note.title || ''}
-          onChange={e => onUpdate(note.id, { title: e.target.value })}
-          placeholder="Title"
-          className="w-full text-2xl font-heading font-bold bg-transparent outline-none placeholder:text-foreground/20"
-        />
-
-        {activeTab === 'note' && (
-          <textarea
-            value={note.content || ''}
-            onChange={e => onUpdate(note.id, { content: e.target.value })}
-            placeholder="Start writing..."
-            className="w-full min-h-[200px] text-base font-body bg-transparent outline-none resize-none placeholder:text-foreground/20 leading-relaxed"
+      <div className="px-4 py-8 space-y-10 max-w-4xl mx-auto">
+        <div className="space-y-6">
+          <input
+            value={note.title || ''}
+            onChange={e => onUpdate(note.id, { title: e.target.value })}
+            placeholder="Untitled Project"
+            className="w-full text-4xl font-heading font-black bg-transparent outline-none placeholder:text-foreground/5 tracking-tighter sm:text-5xl"
           />
-        )}
-
-        {activeTab === 'checklist' && (
-          <ChecklistEditor items={note.checklist || []} onChange={checklist => onUpdate(note.id, { checklist })} />
-        )}
-
-        {activeTab === 'mindmap' && (
-          <MindMapEditor nodes={note.mindmap || []} onChange={mindmap => onUpdate(note.id, { mindmap })} />
-        )}
-
-        {activeTab === 'media' && (
-          <MediaEditor media={note.media || []} onChange={media => onUpdate(note.id, { media })} userId={userId} />
-        )}
-
-        <div className="border-t border-foreground/8 pt-4">
-          <ReminderEditor reminder={note.reminder} noteTitle={note.title || ''} onChange={reminder => onUpdate(note.id, { reminder })} />
+          
+          <div className="flex items-center gap-4 py-2">
+            <div className="h-px flex-1 bg-foreground/5" />
+            <ReminderEditor 
+               reminder={note.reminder} 
+               noteTitle={note.title || ''} 
+               onChange={reminder => onUpdate(note.id, { reminder })} 
+            />
+            <div className="h-px flex-1 bg-foreground/5" />
+          </div>
         </div>
 
-        <div className="border-t border-foreground/8 pt-4">
-          <WidgetPreview note={note} onAddWidget={handleAddWidget} />
-        </div>
+        <Reorder.Group axis="y" values={sections} onReorder={handleReorder} className="space-y-8">
+          {sections.map(sectionId => (
+            <Reorder.Item 
+              key={sectionId} 
+              value={sectionId}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4 }}
+              className="relative list-none group"
+            >
+              <div className="transition-transform duration-200 group-active:scale-[0.99]">
+                {renderSection(sectionId)}
+              </div>
+            </Reorder.Item>
+          ))}
+        </Reorder.Group>
       </div>
     </motion.div>
   );

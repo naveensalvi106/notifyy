@@ -43,6 +43,7 @@ export interface Note {
   reminder?: NoteReminder;
   pinned: boolean;
   category: string;
+  sectionOrder?: string[];
   isDeleted?: boolean;
   createdAt: string;
   updatedAt: string;
